@@ -1,0 +1,55 @@
+<ivy-module version="2.0">
+  <info organisation="bundledPlugin" module="com.google.tools.ij.aiplugin" revision="AI-252.27397.103.2522.14514259" />
+  <configurations>
+    <conf name="default" visibility="public" />
+  </configurations>
+  <publications>
+    <artifact name="libv1internal_java_rest" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="libgoogle_auth_intellij_lib" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="aiplugin" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="aida_protobuf" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="jackson-datatype-jsr310-2.18.2" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="anthropic-java-core-2.8.1" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="libserviceusage_v1_java_lib" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="openai-java-core-4.0.0" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="proto-models-1.0" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="wire-runtime-jvm-5.3.1" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="gemini.so" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="lucene-queryparser-9.12.0" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="google-api-services-cloudresourcemanager-v1beta1-rev20240128-2.0.0" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="jackson-datatype-jdk8-2.18.2" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="aida_grpc" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="libagent_log_proto" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="gemini_plugin_proto" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="anthropic-java-client-okhttp-2.8.1" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="libjourneys-java-proto" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="mcp-sdk-libraries" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="libfeedback_java_proto" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="aida_proto" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="sqlite-jdbc-3.43.0.0" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="annotation-jvm-1.7.1" ext="jar" conf="default" url="plugins/gemini/lib" />
+    <artifact name="openai-java-client-okhttp-4.0.0" ext="jar" conf="default" url="plugins/gemini/lib" />
+  </publications>
+  <dependencies>
+    <dependency org="bundledPlugin" name="org.jetbrains.plugins.terminal" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledPlugin" name="org.jetbrains.android" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledPlugin" name="com.android.tools.design" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledPlugin" name="com.intellij.java" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledPlugin" name="org.jetbrains.kotlin" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledPlugin" name="org.jetbrains.kotlin" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledPlugin" name="com.intellij.java" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledPlugin" name="org.intellij.groovy" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledModule" name="intellij.libraries.lucene.common" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledModule" name="intellij.platform.vcs.impl" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledModule" name="intellij.platform.vcs.log.impl" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledModule" name="intellij.platform.jewel.foundation" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledModule" name="intellij.platform.jewel.ideLafBridge" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledModule" name="intellij.platform.jewel.markdown.core" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledModule" name="intellij.platform.jewel.markdown.ideLafBridgeStyling" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledModule" name="intellij.platform.jewel.ui" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledModule" name="intellij.libraries.skiko" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledModule" name="intellij.libraries.compose.foundation.desktop" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledModule" name="intellij.libraries.ktor.client" rev="AI-252.27397.103.2522.14514259" />
+    <dependency org="bundledModule" name="intellij.libraries.ktor.client.cio" rev="AI-252.27397.103.2522.14514259" />
+  </dependencies>
+</ivy-module>

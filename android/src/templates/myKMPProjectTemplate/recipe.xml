@@ -1,0 +1,22 @@
+<recipe>
+
+    <!-- 公共目录一定生成 -->
+    <instantiate from="root/{{projectName}}/common"
+                 to="${projectOut}/common"/>
+
+    <conditional if="${androidApp}">
+        <instantiate from="root/{{projectName}}/android"
+                     to="${projectOut}/android"/>
+    </conditional>
+
+    <conditional if="${iosApp}">
+        <instantiate from="root/{{projectName}}/ios"
+                     to="${projectOut}/ios"/>
+    </conditional>
+
+    <conditional if="${cppApp}">
+        <instantiate from="root/{{projectName}}/cpp"
+                     to="${projectOut}/cpp"/>
+    </conditional>
+
+</recipe>

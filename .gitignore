@@ -1,0 +1,20 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+out/
+
+# Gradle
+.gradle/
+build/
+
+# IntelliJ Plugin Sandbox
+build/idea-sandbox/
+idea-sandbox/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+*.hprof
