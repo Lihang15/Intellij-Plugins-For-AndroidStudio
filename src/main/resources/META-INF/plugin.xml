@@ -33,7 +33,7 @@
         <toolWindow factoryClass="org.jetbrains.plugins.template.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
         <postStartupActivity implementation="org.jetbrains.plugins.template.startup.MyProjectActivity" />
         
-        <!-- MyMainCpp 运行配置 -->
+          <!-- MyMainCpp 运行配置 -->
         <configurationType implementation="org.jetbrains.plugins.template.cpp.MyMainCppConfigurationType"/>
         <runConfigurationProducer implementation="org.jetbrains.plugins.template.cpp.MyMainCppRunConfigurationProducer"/>
         <programRunner implementation="org.jetbrains.plugins.template.cpp.MyMainCppDebugRunner"/>
