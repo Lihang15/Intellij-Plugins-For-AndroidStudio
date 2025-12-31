@@ -29,10 +29,13 @@ class MyMainCppDebugRunner : GenericProgramRunner<RunnerSettings>() {
     }
 
     override fun doExecute(state: RunProfileState, environment: ExecutionEnvironment): RunContentDescriptor? {
+        println("\n========== [MyMainCppDebugRunner.doExecute] 函数调用 ==========")
+        
         val configuration = environment.runProfile as? MyMainCppRunConfiguration
             ?: throw ExecutionException("Invalid configuration")
         
         val project = configuration.project
+        println("[doExecute] 项目: ${project.name}")
         
         // 1. 先编译 C++ 程序
         val cppFilePath = configuration.getMyMainCppPath()
@@ -41,23 +44,31 @@ class MyMainCppDebugRunner : GenericProgramRunner<RunnerSettings>() {
         val outputPath = configuration.getOutputPath()
             ?: throw ExecutionException("无法确定输出路径")
         
-        println("[MyMainCppDebugRunner] 开始编译 my_main.cpp...")
+        println("[doExecute] C++ 源文件: $cppFilePath")
+        println("[doExecute] 输出可执行文件: $outputPath")
+        println("[doExecute] 步骤1: 开始编译 my_main.cpp...")
         val compileSuccess = compile(cppFilePath, outputPath)
         if (!compileSuccess) {
+            println("[doExecute] ✗ 编译失败")
             throw ExecutionException("编译失败，无法启动调试")
         }
-        println("[MyMainCppDebugRunner] 编译成功: $outputPath")
+        println("[doExecute] ✓ 编译成功: $outputPath")
         
         // 2. 启动 XDebugSession
+        println("[doExecute] 步骤2: 启动 XDebugSession")
         val debuggerManager = XDebuggerManager.getInstance(project)
         val debugSession = debuggerManager.startSession(
             environment,
             object : com.intellij.xdebugger.XDebugProcessStarter() {
                 override fun start(session: XDebugSession): XDebugProcess {
+                    println("[doExecute] 创建 DapDebugProcess")
                     return DapDebugProcess(session, outputPath)
                 }
             }
         )
+        
+        println("[doExecute] ✓ 调试会话已启动")
+        println("========== [MyMainCppDebugRunner.doExecute] 函数结束 ==========\n")
         
         return debugSession.runContentDescriptor
     }
@@ -66,6 +77,10 @@ class MyMainCppDebugRunner : GenericProgramRunner<RunnerSettings>() {
      * 编译 C++ 文件
      */
     private fun compile(cppFilePath: String, outputPath: String): Boolean {
+        println("\n========== [MyMainCppDebugRunner.compile] 函数调用 ==========")
+        println("[compile] 源文件: $cppFilePath")
+        println("[compile] 输出文件: $outputPath")
+        
         val compileCommand = ProcessBuilder(
             "clang++",
             "-g",
@@ -75,22 +90,34 @@ class MyMainCppDebugRunner : GenericProgramRunner<RunnerSettings>() {
             outputPath
         )
         
+        println("[compile] 编译命令: clang++ -g -O0 $cppFilePath -o $outputPath")
+        
         val projectDir = File(cppFilePath).parentFile
         compileCommand.directory(projectDir)
+        println("[compile] 工作目录: ${projectDir.absolutePath}")
         
         return try {
+            println("[compile] 执行编译...")
             val process = compileCommand.start()
             val exitCode = process.waitFor()
             
+            println("[compile] 编译退出码: $exitCode")
+            
             if (exitCode != 0) {
                 val errorOutput = process.errorStream.bufferedReader().readText()
-                println("[MyMainCppDebugRunner] 编译错误: $errorOutput")
+                println("[compile] ✗ 编译错误:")
+                println(errorOutput)
+                println("========== [MyMainCppDebugRunner.compile] 编译失败 ==========\n")
                 false
             } else {
+                println("[compile] ✓ 编译成功")
+                println("========== [MyMainCppDebugRunner.compile] 编译成功 ==========\n")
                 true
             }
         } catch (e: Exception) {
-            println("[MyMainCppDebugRunner] 编译异常: ${e.message}")
+            println("[compile] ✗ 编译异常: ${e.message}")
+            e.printStackTrace()
+            println("========== [MyMainCppDebugRunner.compile] 编译异常 ==========\n")
             false
         }
     }
