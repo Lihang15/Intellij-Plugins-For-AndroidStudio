@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        xmlns="http://www.w3.org/2000/svg"
+>
+    <!-- 文件背景 -->
+    <path
+            d="M3 1h6l4 4v10H3z"
+            fill="#2E7D32"
+    />
+
+    <!-- 右上角折角 -->
+    <path
+            d="M9 1v4h4z"
+            fill="#4CAF50"
+    />
+
+    <!-- T 字母 -->
+    <text
+            x="8"
+            y="12"
+            text-anchor="middle"
+            font-size="6"
+            font-family="Arial, Helvetica, sans-serif"
+            font-weight="bold"
+            fill="#E8F5E9"
+    >
+        T
+    </text>
+</svg>

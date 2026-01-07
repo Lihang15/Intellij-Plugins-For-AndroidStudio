@@ -17,8 +17,8 @@ import java.io.File
 
 val flutterApplicationTemplate
     get() = template {
-        name = "My Eazytec-KMP Project Template"
-        description = "My Eazytec-KMP Project Template"
+        name = "My OHOS-KMP Project Template"
+        description = "My OHOS-KMP Project Template"
         minApi = 21
         constraints = listOf(
             TemplateConstraint.AndroidX,
@@ -36,9 +36,9 @@ val flutterApplicationTemplate
         }
 
         val sdkPath = stringParameter {
-            name = "HOSO SDK Path"
+            name = "OHOS SDK Path"
             default = getFlutterSdkPathFromEnv()
-            help = "Path to HOSO SDK"
+            help = "Path to OHOS SDK"
         }
 
         val org = stringParameter {
@@ -56,8 +56,8 @@ val flutterApplicationTemplate
             name = "Use Swift for iOS code"
             default = true
         }
-        val usehoso = booleanParameter {
-            name = "Use usehoso for Arkts code"
+        val useohos = booleanParameter {
+            name = "Use ohos for Arkts code"
             default = true
         }
 
@@ -88,7 +88,7 @@ val flutterApplicationTemplate
             TextFieldWidget(org),
             CheckBoxWidget(useKotlin),
             CheckBoxWidget(useSwift),
-            CheckBoxWidget(usehoso),
+            CheckBoxWidget(useohos),
 
         )
 //        thumb { File("test.png") }

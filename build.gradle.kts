@@ -23,7 +23,7 @@ kotlin {
 // Configure project's dependencies
 repositories {
     mavenCentral()
-
+    maven { url = uri("https://jitpack.io") }
     // IntelliJ Platform Gradle Plugin Repositories Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-repositories-extension.html
     intellijPlatform {
         defaultRepositories()
@@ -34,12 +34,19 @@ repositories {
 dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.opentest4j)
+    // LSP4IntelliJ dependency for language server protocol support
+    implementation("com.github.ballerina-platform:lsp4intellij:0.96.1")
+
+    // JFlex for lexer generation
+    compileOnly("de.jflex:jflex:1.8.2")
+    compileOnly("de.jflex:jflex:1.8.2")
 
     // IntelliJ Platform Gradle Plugin Dependencies Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html
     intellijPlatform {
 //        androidStudio(providers.gradleProperty("androidVersion"))
 //        intellijIdea(providers.gradleProperty("platformVersion"))
         local("/Applications/Android Studio.app")
+//        local("/Applications/IntelliJ IDEA CE.app")
         // Plugin Dependencies. Uses `platformBundledPlugins` property from the gradle.properties file for bundled IntelliJ Platform plugins.
 //        bundledPlugins(providers.gradleProperty("platformBundledPlugins").map { it.split(',') })
 
