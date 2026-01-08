@@ -1,0 +1,49 @@
+// Tim 语言语法高亮测试文件
+Timings {
+
+    WaveformTables {
+        WaveformTable default [x1] {
+            Signal Testxxx {
+                0:d1:D; 
+                1:d1:U; 
+                Z:d1:Z; 
+                L:d1:Z r1:L; 
+                H:d1:Z r1:H; 
+                X:d1:Z r1:X;
+            }
+        }
+    }
+    
+    EquationSets {
+        EquationSet DC_DDR0_eqn {
+            SpecVars {
+                Double Tcoef;
+                Time Roff;
+                Time per_125;
+            }
+            TimingSets {
+                TimingSet gen_tp1 [(per_125)*Tcoef] {
+                    Signal CBIT_I_CLK {
+                        d1 = ((0/125) * per_125) * Tcoef;
+                        r1 = ((100/125) * per_125) * Tcoef + Roff;
+                    }
+                }
+            }
+        }
+    }
+    
+    SpecificationSets {
+        SpecificationSet DC_DDR0_spec {
+            SpecVars {
+                Tcoef = 1;
+                Roff = 0 ns;
+                per_125 = 125 ns;
+            }
+            Ports [pDDR0] {
+                SpecVars pDDR0 [DC_DDR0_wvt] [DC_DDR0_eqn] {
+                    per_125 = 120 ns;
+                }
+            }
+        }
+    }
+}

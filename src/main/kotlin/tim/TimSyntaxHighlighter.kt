@@ -20,6 +20,21 @@ class TimSyntaxHighlighter : SyntaxHighlighterBase() {
             TimTokenTypes.BRACE ->
                 pack(DefaultLanguageHighlighterColors.BRACES)
 
+            TimTokenTypes.NUMBER ->
+                pack(DefaultLanguageHighlighterColors.NUMBER)
+
+            TimTokenTypes.COLON ->
+                pack(DefaultLanguageHighlighterColors.OPERATION_SIGN)
+
+            TimTokenTypes.SEMICOLON ->
+                pack(DefaultLanguageHighlighterColors.SEMICOLON)
+
+            TimTokenTypes.COMMENT ->
+                pack(DefaultLanguageHighlighterColors.LINE_COMMENT)
+
+            TimTokenTypes.IDENTIFIER ->
+                pack(DefaultLanguageHighlighterColors.IDENTIFIER)
+
             else -> emptyArray()
         }
 }

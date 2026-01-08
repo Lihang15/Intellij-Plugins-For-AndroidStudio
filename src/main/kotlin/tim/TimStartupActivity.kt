@@ -13,87 +13,50 @@ class TimStartupActivity : StartupActivity {
     }
 
     override fun runActivity(project: Project) {
-        println("[TimLSPClient] TimStartupActivity started: Initializing LSP server for .tim files")
         LOG.info("[TimLSPClient] TimStartupActivity started: Initializing LSP server for .tim files")
 
         try {
-            // 验证语言服务器文件是否存在
+            // 语言服务器路径
             val serverPath = "/Users/admin/EazyWork/projects/Intellij-Plugins-For-AndroidStudio/lsp-8600/server/out/server.js"
             val serverFile = java.io.File(serverPath)
-            println("[TimLSPClient] Checking if server file exists at: \$serverPath")
-            println("[TimLSPClient] Server file exists: \${serverFile.exists()}")
-            println("[TimLSPClient] Server file can read: \${serverFile.canRead()}")
             
-            LOG.info("[TimLSPClient] Server file exists: \${serverFile.exists()}")
-            LOG.info("[TimLSPClient] Server file can read: \${serverFile.canRead()}")
+            LOG.info("[TimLSPClient] Checking if server file exists at: $serverPath")
+            LOG.info("[TimLSPClient] Server file exists: ${serverFile.exists()}")
+            LOG.info("[TimLSPClient] Server file can read: ${serverFile.canRead()}")
 
             if (!serverFile.exists()) {
-                println("[TimLSPClient] ERROR: Server file does not exist at: \$serverPath")
-                LOG.error("[TimLSPClient] ERROR: Server file does not exist at: \$serverPath")
+                LOG.error("[TimLSPClient] ERROR: Server file does not exist at: $serverPath")
                 return
             }
 
+            // 创建 LSP 服务器定义
+            // 第一个参数是扩展名（不带点），用于关联文件类型
             val serverDefinition = RawCommandServerDefinition(
-                "tim",
+                "tim",  // 文件扩展名，关联 .tim 文件
                 arrayOf(
                     "node",
                     serverPath,
-                    "--stdio"
+                    "--stdio"  // 使用 stdio 通信
                 )
             )
 
-            println("[TimLSPClient] Creating server definition for .tim files")
-            LOG.info("[TimLSPClient] Creating server definition for .tim files")
+            LOG.info("[TimLSPClient] Created server definition for .tim files")
+            LOG.info("[TimLSPClient] Command: node $serverPath --stdio")
             
-            println("[TimLSPClient] Registering LSP server definition for .tim files")
-            LOG.info("[TimLSPClient] Registering LSP server definition for .tim files")
-            
+            // 注册 LSP 服务器定义
+            LOG.info("[TimLSPClient] Registering LSP server definition...")
             val success = IntellijLanguageClient.addServerDefinition(serverDefinition)
             
-            println(success)
-            LOG.info("[TimLSPClient] LSP server definition registered successfully: \$success")
-
-            // 验证服务器定义是否已添加
-            println("[TimLSPClient] LSP server definition added for extension: tim")
-            LOG.info("[TimLSPClient] LSP server definition added for extension: tim")
-            
-            println("[TimLSPClient] Server definition registered, but cannot verify extensions due to API limitations")
-            LOG.info("[TimLSPClient] Server definition registered, but cannot verify extensions due to API limitations")
-            
-
+            if (success != null) {
+                LOG.info("[TimLSPClient] LSP server definition registered successfully")
+                LOG.info("[TimLSPClient] LSP will start when opening .tim files")
+            } else {
+                LOG.warn("[TimLSPClient] Server definition registration returned null")
+            }
             
         } catch (e: Exception) {
-            println("[TimLSPClient] ERROR initializing LSP server for .tim files: \${e.message}")
-            e.printStackTrace()
             LOG.error("[TimLSPClient] Error initializing LSP server for .tim files", e)
+            e.printStackTrace()
         }
     }
 }
-
-
-
-//class TimStartupActivity : ProjectActivity {
-//
-//
-//
-//    override suspend fun execute(project: Project) {
-//
-//        println("[TimLSPClient] TimPreloadingActivity started: Initializing LSP server for .tim files")
-//
-//        val serverDefinition = RawCommandServerDefinition(
-//            "tim",
-//            arrayOf(
-//                "node",
-//                "/Users/admin/EazyWork/projects/Intellij-Plugins-For-AndroidStudio/lsp-8600/server/out/server.js",
-//                "--stdio"
-//            )
-//        )
-//
-//        println("[TimLSPClient] Registering LSP server definition for .tim files")
-//        IntellijLanguageClient.addServerDefinition(serverDefinition)
-//        println("[TimLSPClient] LSP server definition registered successfully")
-//
-//        // 验证服务器定义是否已添加
-//        println("[TimLSPClient] LSP server definition added for extension: tim")
-//    }
-//}

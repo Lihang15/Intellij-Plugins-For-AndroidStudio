@@ -8,4 +8,9 @@ object TimTokenTypes {
     val IDENTIFIER = TimTokenType("IDENTIFIER")
     val ANNOTATION = TimTokenType("ANNOTATION")
     val WHITESPACE = TimTokenType("WHITESPACE")
+    val NUMBER = TimTokenType("NUMBER")
+    val COLON = TimTokenType("COLON")
+    val SEMICOLON = TimTokenType("SEMICOLON")
+    val COMMENT = TimTokenType("COMMENT")
+    val STRING = TimTokenType("STRING")
 }
