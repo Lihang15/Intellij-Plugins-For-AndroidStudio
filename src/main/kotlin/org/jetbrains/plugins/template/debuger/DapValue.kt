@@ -31,25 +31,8 @@ class DapValue(
             return
         }
         
-        // 获取子变量
-        dapSession.variables(variablesReference) { response ->
-            val body = response.getAsJsonObject("body")
-            val variables = body.getAsJsonArray("variables")
-            
-            if (variables == null || variables.size() == 0) {
-                node.addChildren(XValueChildrenList.EMPTY, true)
-                return@variables
-            }
-            
-            val children = XValueChildrenList()
-            for (i in 0 until variables.size()) {
-                val childVar = variables[i].asJsonObject
-                val childName = childVar.get("name")?.asString ?: "?"
-                val childValue = DapValue(dapSession, childVar)
-                children.add(childName, childValue)
-            }
-            
-            node.addChildren(children, true)
-        }
+        // 对于 lldb，我们不支持复杂的子变量结构
+        // 如果需要，可以后续添加通过 print 命令解析
+        node.addChildren(XValueChildrenList.EMPTY, true)
     }
 }

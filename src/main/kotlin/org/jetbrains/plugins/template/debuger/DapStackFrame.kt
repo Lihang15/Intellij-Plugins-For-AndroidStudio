@@ -51,14 +51,34 @@ class DapStackFrame(
             file = LocalFileSystem.getInstance().findFileByPath(sourcePath)
         }
         
+        // 如果还是找不到，尝试在项目中查找
         if (file == null) {
-            println("[DapStackFrame.getSourcePosition] ✗ 找不到文件: $sourcePath")
-            println("[DapStackFrame.getSourcePosition] 尝试查找所有已打开的文件...")
-            
-            // 尝试通过文件名匹配
+            println("[DapStackFrame.getSourcePosition] 刷新后仍找不到，尝试在项目中查找")
             val fileName = sourcePath.substringAfterLast('/')
             println("[DapStackFrame.getSourcePosition] 文件名: $fileName")
             
+            // 尝试在项目根目录中查找
+            val projectBasePath = project.basePath
+            if (projectBasePath != null) {
+                val possiblePaths = listOf(
+                    "$projectBasePath/$fileName",
+                    "$projectBasePath/src/$fileName",
+                    "$projectBasePath/src/main/$fileName"
+                )
+                
+                for (possiblePath in possiblePaths) {
+                    println("[DapStackFrame.getSourcePosition] 尝试路径: $possiblePath")
+                    file = LocalFileSystem.getInstance().findFileByPath(possiblePath)
+                    if (file != null) {
+                        println("[DapStackFrame.getSourcePosition] ✓ 找到文件: ${file.path}")
+                        break
+                    }
+                }
+            }
+        }
+        
+        if (file == null) {
+            println("[DapStackFrame.getSourcePosition] ✗ 找不到文件: $sourcePath")
             return null
         }
         
@@ -83,76 +103,67 @@ class DapStackFrame(
         println("\n========== [DapStackFrame.computeChildren] 获取变量 ==========")
         println("[computeChildren] frameId=$frameId")
         
-        // 获取作用域（scopes）
+        // 直接获取当前帧的变量（lldb 不需要先获取 scopes）
         dapSession.scopes(frameId) { response ->
-            println("\n[computeChildren] scopes 回调执行")
+            println("\n[computeChildren] scopes(变量) 回调执行")
             println("[computeChildren] response: $response")
             
-            val body = response.getAsJsonObject("body")
-            val scopes = body.getAsJsonArray("scopes")
+            // 解析 lldb 的变量输出
+            val children = parseVariablesOutput(response)
             
-            println("[computeChildren] scopes 数量: ${scopes?.size() ?: 0}")
+            println("[computeChildren] 解析到变量数量: ${children.size()}")
             
-            if (scopes == null || scopes.size() == 0) {
-                println("[computeChildren] 没有 scopes，返回空")
-                node.addChildren(XValueChildrenList.EMPTY, true)
-                return@scopes
+            node.addChildren(children, true)
+        }
+        
+        println("========== [DapStackFrame.computeChildren] 结束 ==========\n")
+    }
+    
+    /**
+     * 解析 lldb 变量输出
+     */
+    private fun parseVariablesOutput(output: String): XValueChildrenList {
+        val children = XValueChildrenList()
+        
+        // 解析 lldb frame variable 的输出，例如:
+        // (int) x = 10
+        // (double) y = 3.14
+        
+        val lines = output.split("\n")
+        for (line in lines) {
+            val trimmed = line.trim()
+            if (trimmed.isEmpty() || trimmed.startsWith("frame #") || trimmed.startsWith("(lldb)")) {
+                continue
             }
             
-            val children = XValueChildrenList()
-            var pendingScopes = scopes.size()
-            
-            // 对每个 scope 获取变量
-            for (i in 0 until scopes.size()) {
-                val scope = scopes[i].asJsonObject
-                val scopeName = scope.get("name")?.asString ?: "scope"
-                val variablesReference = scope.get("variablesReference")?.asInt ?: 0
+            // 解析变量行，例如: (int) x = 10
+            val parts = trimmed.split("=")
+            if (parts.size >= 2) {
+                val leftPart = parts[0].trim()
+                val value = parts.drop(1).joinToString("=").trim()
                 
-                println("[computeChildren] scope[$i]: name=$scopeName, variablesReference=$variablesReference")
-                
-                if (variablesReference > 0) {
-                    // 获取变量
-                    dapSession.variables(variablesReference) { varResponse ->
-                        println("\n[computeChildren] variables 回调执行 for scope $scopeName")
-                        println("[computeChildren] varResponse: $varResponse")
-                        
-                        val varBody = varResponse.getAsJsonObject("body")
-                        val variables = varBody.getAsJsonArray("variables")
-                        
-                        println("[computeChildren] 变量数量: ${variables?.size() ?: 0}")
-                        
-                        if (variables != null) {
-                            for (j in 0 until variables.size()) {
-                                val variable = variables[j].asJsonObject
-                                val varName = variable.get("name")?.asString ?: "?"
-                                val varValue = variable.get("value")?.asString ?: ""
-                                println("[computeChildren] 变量[$j]: name=$varName, value=$varValue")
-                                val value = DapValue(dapSession, variable)
-                                children.add(varName, value)
-                                
-                                // 在编辑器中显示变量值
-                                showVariableInEditor(varName, varValue)
-                            }
-                        }
-                        
-                        pendingScopes--
-                        println("[computeChildren] 剩余 pendingScopes: $pendingScopes")
-                        if (pendingScopes == 0) {
-                            println("[computeChildren] 所有变量获取完成，添加到 node")
-                            node.addChildren(children, true)
-                        }
-                    }
-                } else {
-                    println("[computeChildren] scope $scopeName 没有变量引用")
-                    pendingScopes--
-                    if (pendingScopes == 0) {
-                        node.addChildren(children, true)
-                    }
+                // 提取变量名和类型
+                val nameMatch = "\\)\\s+(\\w+)$".toRegex().find(leftPart)
+                if (nameMatch != null) {
+                    val varName = nameMatch.groupValues[1]
+                    
+                    // 创建一个模拟的 JSON 对象
+                    val varJson = com.google.gson.JsonObject()
+                    varJson.addProperty("name", varName)
+                    varJson.addProperty("value", value)
+                    varJson.addProperty("type", leftPart.substringBefore(")").substringAfter("("))
+                    varJson.addProperty("variablesReference", 0)
+                    
+                    val dapValue = DapValue(dapSession, varJson)
+                    children.add(varName, dapValue)
+                    
+                    // 在编辑器中显示变量值
+                    showVariableInEditor(varName, value)
                 }
             }
         }
         
-        println("========== [DapStackFrame.computeChildren] 结束 ==========\n")
+        return children
     }
     
     /**
