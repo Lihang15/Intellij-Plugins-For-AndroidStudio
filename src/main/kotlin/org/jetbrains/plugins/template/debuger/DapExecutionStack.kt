@@ -3,6 +3,7 @@ package org.jetbrains.plugins.template.debuger
 import com.google.gson.JsonArray
 import com.intellij.xdebugger.frame.XExecutionStack
 import com.intellij.xdebugger.frame.XStackFrame
+import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.log
 
 /**
  * DAP 执行栈
@@ -15,31 +16,32 @@ class DapExecutionStack(
 ) : XExecutionStack("Thread $threadId") {
     
     init {
-        println("[DapExecutionStack] 创建执行栈: threadId=$threadId, 栈帧数=${stackFrames.size()}")
+        log("DapExecutionStack.init", "创建执行栈: threadId=$threadId, 栈帧数=${stackFrames.size()}")
     }
     
     override fun getTopFrame(): XStackFrame? {
-        println("[DapExecutionStack.getTopFrame] threadId=$threadId")
+        log("getTopFrame", "threadId=$threadId, stackFrames.size=${stackFrames.size()}")
         if (stackFrames.size() == 0) {
-            println("[DapExecutionStack.getTopFrame] 没有栈帧")
+            log("getTopFrame", "没有栈帧, 返回 null", "WARN")
             return null
         }
         
         val topFrame = stackFrames[0].asJsonObject
-        println("[DapExecutionStack.getTopFrame] 返回顶层栈帧")
+        log("getTopFrame", "返回顶层栈帧: $topFrame")
         return DapStackFrame(dapSession, topFrame, project)
     }
     
     override fun computeStackFrames(firstFrameIndex: Int, container: XStackFrameContainer?) {
-        println("[DapExecutionStack.computeStackFrames] threadId=$threadId, firstFrameIndex=$firstFrameIndex")
+        log("computeStackFrames", "threadId=$threadId, firstFrameIndex=$firstFrameIndex")
         val frames = mutableListOf<XStackFrame>()
         
         for (i in firstFrameIndex until stackFrames.size()) {
             val frameJson = stackFrames[i].asJsonObject
+            log("computeStackFrames", "添加栈帧#$i: $frameJson")
             frames.add(DapStackFrame(dapSession, frameJson, project))
         }
         
-        println("[DapExecutionStack.computeStackFrames] 添加 ${frames.size} 个栈帧")
+        log("computeStackFrames", "共添加 ${frames.size} 个栈帧")
         container?.addStackFrames(frames, true)
     }
 }

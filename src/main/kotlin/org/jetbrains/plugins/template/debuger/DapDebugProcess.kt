@@ -9,6 +9,9 @@ import com.intellij.xdebugger.evaluation.XDebuggerEditorsProvider
 import com.intellij.xdebugger.frame.XSuspendContext
 import com.intellij.xdebugger.XDebuggerManager
 import com.google.gson.JsonArray
+import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.log
+import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.logSeparator
+import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.logCallStack
 
 
 /**
@@ -25,170 +28,177 @@ class DapDebugProcess(
     private var currentThreadId: Int = 0
     
     init {
-        println("\n========== [DapDebugProcess] 初始化开始 ==========")
-        println("[DapDebugProcess] 可执行文件路径: $executablePath")
+        logSeparator("DapDebugProcess.init", "DapDebugProcess 构造函数")
+        logCallStack("DapDebugProcess.init")
+        log("DapDebugProcess.init", "可执行文件路径: $executablePath")
+        log("DapDebugProcess.init", "dapSession: $dapSession")
+        log("DapDebugProcess.init", "breakpointHandler: $breakpointHandler")
         
         // 设置事件回调
         dapSession.onStopped = { threadId, reason ->
-            println("\n========== [DapDebugProcess] onStopped 回调被触发 ==========")
-            println("[DapDebugProcess.onStopped] threadId=$threadId, reason=$reason")
+            logSeparator("onStopped", "onStopped 回调触发")
+            logCallStack("onStopped")
+            log("onStopped", "threadId=$threadId, reason=$reason")
             currentThreadId = threadId
             handleStopped(threadId, reason)
         }
         
         dapSession.onOutput = { category, output ->
-            println("[DapDebugProcess.onOutput] category=$category, output=$output")
+            log("onOutput", "category=$category, output=$output")
             session.consoleView?.print(output, com.intellij.execution.ui.ConsoleViewContentType.NORMAL_OUTPUT)
         }
         
         dapSession.onTerminated = {
-            println("[DapDebugProcess.onTerminated] 调试会话终止")
+            log("onTerminated", "调试会话终止")
             session.stop()
         }
         
-        println("========== [DapDebugProcess] 初始化完成 ==========\n")
+        log("DapDebugProcess.init", "构造函数完成")
     }
     
     override fun sessionInitialized() {
-        println("\n========== [DapDebugProcess.sessionInitialized] 函数调用 ==========")
+        logSeparator("sessionInitialized", "sessionInitialized 开始")
+        logCallStack("sessionInitialized")
+        log("sessionInitialized", "时间戳: ${System.currentTimeMillis()}")
         
         // 1. 启动 lldb
-        println("[sessionInitialized] 步骤1: 启动 lldb 进程")
+        log("sessionInitialized", "步骤1: 启动 lldb 进程")
         dapSession.start()
         
         // 2. 等待进程启动
-        println("[sessionInitialized] 步骤2: 等待 200ms")
+        log("sessionInitialized", "步骤2: 等待 200ms")
         Thread.sleep(200)
         
         // 3. 发送 initialize
-        println("[sessionInitialized] 步骤3: 发送 initialize 请求")
+        log("sessionInitialized", "步骤3: 发送 initialize 请求")
         dapSession.initialize { initResponse ->
-            println("\n[sessionInitialized] initialize 响应回调执行")
-            println("[sessionInitialized] initResponse: ${initResponse}")
+            log("sessionInitialized", "initialize 响应: $initResponse")
             
             // 4. 等待 initialize 完成
-            println("[sessionInitialized] 步骤4: 等待 200ms")
+            log("sessionInitialized", "步骤4: 等待 200ms")
             Thread.sleep(200)
             
-            // 5. 先加载目标程序（关键！）
-            println("[sessionInitialized] 步骤5: 发送 launch 请求（加载目标程序）")
+            // 5. 加载目标程序
+            log("sessionInitialized", "步骤5: 发送 launch 请求")
             dapSession.launch(executablePath) { launchResponse ->
-                println("\n[sessionInitialized] launch 响应回调执行")
-                println("[sessionInitialized] launchResponse: ${launchResponse}")
+                log("sessionInitialized", "launch 响应: $launchResponse")
                 
                 // 6. 等待 launch 完成
-                println("[sessionInitialized] 步骤6: 等待 300ms")
+                log("sessionInitialized", "步骤6: 等待 300ms")
                 Thread.sleep(300)
                 
-                // 7. 现在设置断点（目标程序已加载）
-                println("[sessionInitialized] 步骤7: 开始同步断点")
-                syncBreakpoints { 
-                    println("\n[sessionInitialized] 步骤8: 断点设置完成，等待 200ms")
-                    Thread.sleep(200)
+                // 7. 标记 LLDB 已就绪
+                log("sessionInitialized", "步骤7: 调用 breakpointHandler.onLldbReady()")
+                breakpointHandler.onLldbReady()
+                log("sessionInitialized", "breakpointHandler.onLldbReady() 完成")
+                
+                // 8. 主动同步所有断点（因为 registerBreakpoint 可能未被调用）
+                log("sessionInitialized", "步骤8: 主动同步断点")
+                syncBreakpoints {
+                    log("sessionInitialized", "syncBreakpoints 完成")
                     
-                    // 8. 配置完成，运行程序
-                    println("[sessionInitialized] 步骤9: 发送 configurationDone 请求")
+                    // 9. 等待断点同步
+                    log("sessionInitialized", "步骤9: 等待 300ms")
+                    Thread.sleep(300)
+                    
+                    // 10. 运行程序
+                    log("sessionInitialized", "步骤10: 发送 configurationDone 请求")
                     dapSession.configurationDone { configResponse ->
-                        println("\n[sessionInitialized] configurationDone 响应回调执行")
-                        println("[sessionInitialized] configResponse: ${configResponse}")
-                        println("[sessionInitialized] 调试会话初始化完成！")
+                        log("sessionInitialized", "configurationDone 响应: $configResponse")
+                        log("sessionInitialized", "调试会话初始化完成!")
                     }
                 }
             }
         }
         
-        println("========== [DapDebugProcess.sessionInitialized] 函数结束 ==========\n")
+        log("sessionInitialized", "同步部分结束（等待异步回调）")
     }
     
     override fun startStepOver(context: XSuspendContext?) {
-        println("\n========== [DapDebugProcess.startStepOver] 函数调用 ==========")
-        println("[startStepOver] currentThreadId=$currentThreadId")
+        logSeparator("startStepOver", "单步跳过")
+        logCallStack("startStepOver")
+        log("startStepOver", "currentThreadId=$currentThreadId")
         
         if (currentThreadId == 0) {
-            println("[startStepOver] ✗ 错误: currentThreadId 为 0，无法执行单步操作")
+            log("startStepOver", "currentThreadId 为 0, 无法执行", "ERROR")
             return
         }
         
         try {
             dapSession.stepOver(currentThreadId) {
-                println("[startStepOver] stepOver 回调执行，响应: $it")
+                log("startStepOver", "响应: $it")
             }
         } catch (e: Exception) {
-            println("[startStepOver] ✗ 异常: ${e.message}")
+            log("startStepOver", "异常: ${e.message}", "ERROR")
             e.printStackTrace()
         }
-        
-        println("========== [DapDebugProcess.startStepOver] 函数结束 ==========\n")
     }
     
     override fun startStepInto(context: XSuspendContext?) {
-        println("\n========== [DapDebugProcess.startStepInto] 函数调用 ==========")
-        println("[startStepInto] currentThreadId=$currentThreadId")
+        logSeparator("startStepInto", "单步进入")
+        logCallStack("startStepInto")
+        log("startStepInto", "currentThreadId=$currentThreadId")
         
         if (currentThreadId == 0) {
-            println("[startStepInto] ✗ 错误: currentThreadId 为 0，无法执行单步操作")
+            log("startStepInto", "currentThreadId 为 0, 无法执行", "ERROR")
             return
         }
         
         try {
             dapSession.stepIn(currentThreadId) {
-                println("[startStepInto] stepIn 回调执行，响应: $it")
+                log("startStepInto", "响应: $it")
             }
         } catch (e: Exception) {
-            println("[startStepInto] ✗ 异常: ${e.message}")
+            log("startStepInto", "异常: ${e.message}", "ERROR")
             e.printStackTrace()
         }
-        
-        println("========== [DapDebugProcess.startStepInto] 函数结束 ==========\n")
     }
     
     override fun startStepOut(context: XSuspendContext?) {
-        println("\n========== [DapDebugProcess.startStepOut] 函数调用 ==========")
-        println("[startStepOut] currentThreadId=$currentThreadId")
+        logSeparator("startStepOut", "单步退出")
+        logCallStack("startStepOut")
+        log("startStepOut", "currentThreadId=$currentThreadId")
         
         if (currentThreadId == 0) {
-            println("[startStepOut] ✗ 错误: currentThreadId 为 0，无法执行单步操作")
+            log("startStepOut", "currentThreadId 为 0, 无法执行", "ERROR")
             return
         }
         
         try {
             dapSession.stepOut(currentThreadId) {
-                println("[startStepOut] stepOut 回调执行，响应: $it")
+                log("startStepOut", "响应: $it")
             }
         } catch (e: Exception) {
-            println("[startStepOut] ✗ 异常: ${e.message}")
+            log("startStepOut", "异常: ${e.message}", "ERROR")
             e.printStackTrace()
         }
-        
-        println("========== [DapDebugProcess.startStepOut] 函数结束 ==========\n")
     }
     
     override fun resume(context: XSuspendContext?) {
-        println("\n========== [DapDebugProcess.resume] 函数调用 ==========")
-        println("[resume] currentThreadId=$currentThreadId")
+        logSeparator("resume", "继续执行")
+        logCallStack("resume")
+        log("resume", "currentThreadId=$currentThreadId")
         
         if (currentThreadId == 0) {
-            println("[resume] ✗ 错误: currentThreadId 为 0，无法执行继续操作")
+            log("resume", "currentThreadId 为 0, 无法执行", "ERROR")
             return
         }
         
         try {
             dapSession.continue_(currentThreadId) { response ->
-                println("[resume] continue 回调执行，响应: $response")
+                log("resume", "响应: $response")
             }
         } catch (e: Exception) {
-            println("[resume] ✗ 异常: ${e.message}")
+            log("resume", "异常: ${e.message}", "ERROR")
             e.printStackTrace()
         }
-        
-        println("========== [DapDebugProcess.resume] 函数结束 ==========\n")
     }
     
     override fun stop() {
-        println("\n========== [DapDebugProcess.stop] 函数调用 ==========")
-        println("[stop] 断开调试连接")
+        logSeparator("stop", "停止调试")
+        logCallStack("stop")
         dapSession.disconnect()
-        println("========== [DapDebugProcess.stop] 函数结束 ==========\n")
+        log("stop", "调试已断开")
     }
     
     override fun getBreakpointHandlers(): Array<XBreakpointHandler<*>> {
@@ -203,68 +213,94 @@ class DapDebugProcess(
      * 处理 stopped 事件
      */
     private fun handleStopped(threadId: Int, reason: String) {
-        println("\n========== [DapDebugProcess.handleStopped] 函数调用 ===========")
-        println("[handleStopped] threadId=$threadId, reason=$reason")
-        println("[handleStopped] ✓✓✓ 收到停止事件，准备通知 UI ✓✓✓")
+        logSeparator("handleStopped", "处理停止事件")
+        logCallStack("handleStopped")
+        log("handleStopped", "threadId=$threadId, reason=$reason")
             
-        // 更新当前线程 ID（重要！）
+        // 更新当前线程 ID
         if (threadId != 0) {
             currentThreadId = threadId
-            println("[handleStopped] 已更新 currentThreadId=$currentThreadId")
+            log("handleStopped", "已更新 currentThreadId=$currentThreadId")
         } else {
-            println("[handleStopped] ⚠ 警告: threadId 为 0")
+            log("handleStopped", "threadId 为 0", "WARN")
         }
             
         // 获取堆栈信息
-        println("[handleStopped] 请求堆栈跟踪信息")
+        log("handleStopped", "请求堆栈跟踪信息")
         try {
             dapSession.stackTrace(threadId) { response ->
-                println("\n[handleStopped] stackTrace 回调执行")
-                println("[handleStopped] stackTrace response 长度: ${response.length}")
-                println("[handleStopped] stackTrace response: $response")
+                log("handleStopped", "stackTrace 响应长度: ${response.length}")
+                log("handleStopped", "stackTrace 响应:\n$response")
                     
                 try {
-                    // 解析 lldb 的堆栈输出，创建一个模拟的 stackFrames JsonArray
                     val stackFrames = parseStackTrace(response)
+                    log("handleStopped", "stackFrames 数量: ${stackFrames.size()}")
+                    
+                    // 输出每个栈帧的详细信息
+                    for (i in 0 until stackFrames.size()) {
+                        val frame = stackFrames[i].asJsonObject
+                        log("handleStopped", "  栈帧#$i: ${frame}")
+                    }
                         
-                    println("[handleStopped] stackFrames 数量: ${stackFrames.size()}")
-                        
-                    // 即使 stackFrames 为空，也要尝试通知 UI
                     val suspendContext = DapSuspendContext(this, dapSession, threadId, stackFrames, session.project)
+                    
+                    // 检查断点命中
+                    if (reason == "breakpoint" && stackFrames.size() > 0) {
+                        val firstFrame = stackFrames[0].asJsonObject
+                        val sourcePath = firstFrame.getAsJsonObject("source")?.get("path")?.asString
+                        val lineNum = firstFrame.get("line")?.asInt
+                        log("handleStopped", "断点命中位置: $sourcePath:$lineNum")
+                        
+                        if (sourcePath != null && lineNum != null) {
+                            val hitBreakpoint = breakpointHandler.findBreakpoint(sourcePath, lineNum)
+                            log("handleStopped", "查找断点结果: ${if (hitBreakpoint != null) "找到" else "未找到"}")
+                        }
+                    }
                         
                     if (stackFrames.size() > 0) {
-                        println("[handleStopped] ✓ 有栈帧信息，创建完整的 suspend context")
                         val firstFrame = stackFrames[0].asJsonObject
                         val sourceInfo = firstFrame.getAsJsonObject("source")?.get("path")?.asString ?: "unknown"
                         val lineInfo = firstFrame.get("line")?.asInt ?: 0
-                        println("[handleStopped] 第一帧位置: $sourceInfo:$lineInfo")
+                        log("handleStopped", "第一帧位置: $sourceInfo:$lineInfo")
                     } else {
-                        println("[handleStopped] ⚠ 警告: stackFrames 为空，但仍会通知 UI")
+                        log("handleStopped", "stackFrames 为空", "WARN")
                     }
                         
-                    // 在 UI 线程中更新位置
-                    println("[handleStopped] 在 UI 线程中调用 session.positionReached")
+                    // UI 线程更新
+                    log("handleStopped", "在 UI 线程调用 session.positionReached")
                     com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
                         try {
-                            println("[handleStopped] → 正在调用 session.positionReached...")
+                            log("handleStopped", "正在调用 positionReached...")
                             session.positionReached(suspendContext)
-                            println("[handleStopped] ✓ positionReached 调用成功，UI 应该已更新")
+                            log("handleStopped", "positionReached 调用成功")
+                            
+                            if (reason == "breakpoint" && stackFrames.size() > 0) {
+                                val firstFrame = stackFrames[0].asJsonObject
+                                val sourcePath = firstFrame.getAsJsonObject("source")?.get("path")?.asString
+                                val lineNum = firstFrame.get("line")?.asInt
+                                
+                                if (sourcePath != null && lineNum != null) {
+                                    val hitBreakpoint = breakpointHandler.findBreakpoint(sourcePath, lineNum)
+                                    if (hitBreakpoint != null) {
+                                        session.setBreakpointVerified(hitBreakpoint)
+                                        log("handleStopped", "断点 UI 状态已更新")
+                                    }
+                                }
+                            }
                         } catch (e: Exception) {
-                            println("[handleStopped] ✗ positionReached 调用异常: ${e.message}")
+                            log("handleStopped", "positionReached 异常: ${e.message}", "ERROR")
                             e.printStackTrace()
                         }
                     }
                 } catch (e: Exception) {
-                    println("[handleStopped] ✗ 处理 stackTrace 响应异常: ${e.message}")
+                    log("handleStopped", "stackTrace 处理异常: ${e.message}", "ERROR")
                     e.printStackTrace()
                 }
             }
         } catch (e: Exception) {
-            println("[handleStopped] ✗ stackTrace 请求异常: ${e.message}")
+            log("handleStopped", "stackTrace 请求异常: ${e.message}", "ERROR")
             e.printStackTrace()
         }
-            
-        println("========== [DapDebugProcess.handleStopped] 函数结束 ==========\n")
     }
     
     /**
@@ -273,16 +309,8 @@ class DapDebugProcess(
     private fun parseStackTrace(output: String): JsonArray {
         val stackFrames = JsonArray()
         
-        println("[parseStackTrace] 开始解析堆栈输出")
-        println("[parseStackTrace] 输出内容:\n$output")
-        
-        // 解析 lldb 的堆栈输出，例如:
-        // * thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
-        //     frame #0: 0x000000010000058c mymaincpp`main at my_main.cpp:11:15
-        //    8   	}
-        //    9
-        //    10  	int main() {
-        // -> 11  	    std::cout << "Debug Test Program" << std::endl;
+        log("parseStackTrace", "=== 开始解析堆栈输出 ===")
+        log("parseStackTrace", "输出内容:\n$output")
         
         val lines = output.split("\n")
         var frameId = 0
@@ -290,70 +318,57 @@ class DapDebugProcess(
         for (i in lines.indices) {
             val line = lines[i].trim()
             
-            // 检测 frame行：以 "frame #" 开头
             if (line.startsWith("frame #")) {
-                println("[parseStackTrace] 找到 frame 行: $line")
-                // 解析帧信息
+                log("parseStackTrace", "找到 frame 行: $line")
                 val frameInfo = parseFrameLine(line, frameId)
                 if (frameInfo != null) {
                     stackFrames.add(frameInfo)
-                    println("[parseStackTrace] 添加 frame #$frameId")
+                    log("parseStackTrace", "添加 frame #$frameId")
                     frameId++
                 }
             }
         }
         
-        println("[parseStackTrace] 解析完成，共 ${stackFrames.size()} 个帧")
+        log("parseStackTrace", "=== 解析完成, 共 ${stackFrames.size()} 个帧 ===")
         return stackFrames
     }
     
     /**
      * 解析单个帧行
-     * 例如: frame #0: 0x000000010000058c mymaincpp`main at my_main.cpp:11:15
      */
     private fun parseFrameLine(line: String, frameId: Int): com.google.gson.JsonObject? {
         try {
-            println("[parseFrameLine] 解析行: $line")
+            log("parseFrameLine", "解析行: $line")
             
-            // 检查是否包含 " at " （有源码位置的 frame）
             val atIndex = line.indexOf(" at ")
             if (atIndex == -1) {
-                println("[parseFrameLine] 没有找到 ' at '，跳过")
+                log("parseFrameLine", "没有找到 ' at ', 跳过")
                 return null
             }
             
-            // 提取 " at " 之后的部分："my_main.cpp:11:15"
             val afterAt = line.substring(atIndex + 4).trim()
-            println("[parseFrameLine] ' at ' 之后: $afterAt")
+            log("parseFrameLine", "' at ' 之后: $afterAt")
             
-            // 分割文件名和行号
             val colonIndex = afterAt.indexOf(":")
             if (colonIndex == -1) {
-                println("[parseFrameLine] 没有找到 ':'，跳过")
+                log("parseFrameLine", "没有找到 ':', 跳过")
                 return null
             }
             
             val fileName = afterAt.substring(0, colonIndex).trim()
-            // 提取行号（可能有列号，如 11:15）
             val rest = afterAt.substring(colonIndex + 1)
             val lineNum = rest.split(":")[0].trim().toIntOrNull()
             
             if (lineNum == null) {
-                println("[parseFrameLine] 无法解析行号")
+                log("parseFrameLine", "无法解析行号")
                 return null
             }
             
-            println("[parseFrameLine] 文件名: $fileName, 行号: $lineNum")
+            log("parseFrameLine", "文件名: $fileName, 行号: $lineNum")
             
-            // 尝试构建完整路径
             val projectPath = session.project.basePath ?: ""
-            val fullPath = if (fileName.startsWith("/")) {
-                fileName
-            } else {
-                "$projectPath/$fileName"
-            }
+            val fullPath = if (fileName.startsWith("/")) fileName else "$projectPath/$fileName"
             
-            // 提取函数名（在 ` 和  at 之间）
             val backtickIndex = line.indexOf("`")
             val funcName = if (backtickIndex != -1 && backtickIndex < atIndex) {
                 line.substring(backtickIndex + 1, atIndex).trim()
@@ -361,7 +376,7 @@ class DapDebugProcess(
                 "unknown"
             }
             
-            println("[parseFrameLine] 函数名: $funcName")
+            log("parseFrameLine", "函数名: $funcName, 完整路径: $fullPath")
             
             val frameObj = com.google.gson.JsonObject()
             frameObj.addProperty("id", frameId)
@@ -373,11 +388,11 @@ class DapDebugProcess(
             sourceObj.addProperty("path", fullPath)
             frameObj.add("source", sourceObj)
             
-            println("[parseFrameLine] ✓ 解析成功: funcName=$funcName, file=$fullPath, line=$lineNum")
+            log("parseFrameLine", "解析成功: $frameObj")
             
             return frameObj
         } catch (e: Exception) {
-            println("[parseFrameLine] ✗ 解析帧行失败: $line, error: ${e.message}")
+            log("parseFrameLine", "解析失败: ${e.message}", "ERROR")
             e.printStackTrace()
             return null
         }
@@ -387,63 +402,82 @@ class DapDebugProcess(
      * 同步断点到 lldb
      */
     private fun syncBreakpoints(onComplete: () -> Unit) {
-        println("\n========== [DapDebugProcess.syncBreakpoints] 函数调用 ==========")
+        logSeparator("syncBreakpoints", "同步断点")
+        logCallStack("syncBreakpoints")
         
-        val breakpointManager =
-            XDebuggerManager.getInstance(session.project).breakpointManager
-
+        val cppExtensions = setOf("cpp", "c", "cc", "cxx", "h", "hpp", "hxx", "m", "mm")
+        
+        val breakpointManager = XDebuggerManager.getInstance(session.project).breakpointManager
         val allBreakpoints = breakpointManager.allBreakpoints
-        println("[syncBreakpoints] 总断点数: ${allBreakpoints.size}")
+        log("syncBreakpoints", "总断点数: ${allBreakpoints.size}")
 
         val breakpointsByFile = allBreakpoints
             .filterIsInstance<XLineBreakpoint<*>>()
+            .filter { bp ->
+                val filePath = bp.sourcePosition?.file?.path ?: return@filter false
+                val ext = filePath.substringAfterLast('.').lowercase()
+                val isCpp = ext in cppExtensions
+                log("syncBreakpoints", "断点 $filePath, ext=$ext, isCpp=$isCpp")
+                isCpp
+            }
             .groupBy { it.sourcePosition?.file?.path ?: return@groupBy "" }
         
-        println("[syncBreakpoints] 按文件分组后的断点: ${breakpointsByFile.keys}")
+        log("syncBreakpoints", "按文件分组: ${breakpointsByFile.keys}")
 
         if (breakpointsByFile.isEmpty() || breakpointsByFile.all { it.key.isEmpty() }) {
-            println("[syncBreakpoints] 没有断点需要设置")
-            println("========== [DapDebugProcess.syncBreakpoints] 函数结束 ==========\n")
+            log("syncBreakpoints", "没有断点需要设置")
             onComplete()
             return
         }
 
         var pendingFiles = breakpointsByFile.filter { it.key.isNotEmpty() }.size
-        println("[syncBreakpoints] 待处理文件数: $pendingFiles")
+        log("syncBreakpoints", "待处理文件数: $pendingFiles")
         
         breakpointsByFile.forEach { (file, breakpoints) ->
             if (file.isEmpty()) return@forEach
             
-            println("\n[syncBreakpoints] 处理文件: $file")
+            log("syncBreakpoints", "处理文件: $file")
 
             val lines = breakpoints
                 .filter { it.isEnabled }
-                .mapNotNull { it.sourcePosition?.line?.plus(1) } // lldb 是 1-based
+                .mapNotNull { it.sourcePosition?.line?.plus(1) }
             
-            println("[syncBreakpoints] 文件 $file 的断点行号: $lines")
+            log("syncBreakpoints", "断点行号: $lines")
 
             if (lines.isNotEmpty()) {
+                val currentBreakpoints = breakpoints.filter { it.isEnabled }
+                
                 dapSession.setBreakpoints(file, lines) { response ->
-                    println("\n[syncBreakpoints] setBreakpoints 回调执行")
-                    println("[syncBreakpoints] 文件: $file")
-                    println("[syncBreakpoints] 行号: $lines")
-                    println("[syncBreakpoints] 响应: $response")
+                    log("syncBreakpoints", "setBreakpoints 响应: $response")
+                    
+                    val success = !response.contains("error:") && 
+                                  (response.contains("Breakpoint") || response.contains("breakpoint"))
+                    
+                    com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
+                        currentBreakpoints.forEach { bp ->
+                            if (success) {
+                                session.setBreakpointVerified(bp)
+                                log("syncBreakpoints", "断点 ${bp.sourcePosition?.file?.path}:${bp.line + 1} 已验证")
+                            } else {
+                                session.setBreakpointInvalid(bp, "Failed to set breakpoint in LLDB")
+                                log("syncBreakpoints", "断点 ${bp.sourcePosition?.file?.path}:${bp.line + 1} 设置失败")
+                            }
+                        }
+                    }
                     
                     pendingFiles--
-                    println("[syncBreakpoints] 剩余待处理文件: $pendingFiles")
+                    log("syncBreakpoints", "剩余待处理: $pendingFiles")
                     
                     if (pendingFiles == 0) {
-                        println("[syncBreakpoints] 所有断点设置完成")
-                        println("========== [DapDebugProcess.syncBreakpoints] 函数结束 ==========\n")
+                        log("syncBreakpoints", "所有断点设置完成")
                         onComplete()
                     }
                 }
             } else {
-                println("[syncBreakpoints] 文件 $file 没有启用的断点")
+                log("syncBreakpoints", "文件 $file 没有启用的断点")
                 pendingFiles--
                 if (pendingFiles == 0) {
-                    println("[syncBreakpoints] 所有断点设置完成")
-                    println("========== [DapDebugProcess.syncBreakpoints] 函数结束 ==========\n")
+                    log("syncBreakpoints", "所有断点设置完成")
                     onComplete()
                 }
             }
@@ -454,4 +488,14 @@ class DapDebugProcess(
      * 获取 DAP 会话
      */
     fun getDapSession(): DapDebugSession = dapSession
+    
+    /**
+     * 获取调试会话 (IntelliJ XDebugSession)
+     */
+    fun getDebugSession(): XDebugSession = session
+    
+    /**
+     * 获取断点处理器
+     */
+    fun getBreakpointHandler(): DapBreakpointHandler = breakpointHandler
 }

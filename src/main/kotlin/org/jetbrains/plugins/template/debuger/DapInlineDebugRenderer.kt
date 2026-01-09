@@ -12,6 +12,7 @@ import com.intellij.ui.JBColor
 import java.awt.Font
 import java.awt.Graphics
 import java.awt.Rectangle
+import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.log
 
 /**
  * DAP 内联调试渲染器 - 在编辑器中显示变量值
@@ -27,17 +28,18 @@ object DapInlineDebugRenderer {
         variableName: String,
         variableValue: String
     ) {
-        println("\n[DapInlineDebugRenderer.showVariableValue] 显示内联变量")
-        println("[showVariableValue] line=$line, $variableName = $variableValue")
+        log("showVariableValue", "=== 显示内联变量 ===")
+        log("showVariableValue", "line=$line, $variableName = $variableValue")
         
         try {
             val document = editor.document
             if (line < 0 || line >= document.lineCount) {
-                println("[showVariableValue] ✗ 行号超出范围: line=$line, lineCount=${document.lineCount}")
+                log("showVariableValue", "行号超出范围: line=$line, lineCount=${document.lineCount}", "WARN")
                 return
             }
             
             val lineEndOffset = document.getLineEndOffset(line)
+            log("showVariableValue", "lineEndOffset=$lineEndOffset")
             
             // 创建文本属性（灰色、斜体）
             val textAttributes = TextAttributes().apply {
@@ -84,13 +86,12 @@ object DapInlineDebugRenderer {
                 }
             )
             
-            println("[showVariableValue] ✓ 内联提示已添加: $inlayText")
+            log("showVariableValue", "内联提示已添加: $inlayText")
             
-            // 保存 highlighter 以便后续清理
             rangeHighlighter.putUserData(INLINE_DEBUG_KEY, true)
             
         } catch (e: Exception) {
-            println("[showVariableValue] ✗ 添加内联提示失败: ${e.message}")
+            log("showVariableValue", "添加内联提示失败: ${e.message}", "ERROR")
             e.printStackTrace()
         }
     }
@@ -99,31 +100,33 @@ object DapInlineDebugRenderer {
      * 清除编辑器中的所有内联调试提示
      */
     fun clearAllInlineHints(editor: Editor) {
-        println("[DapInlineDebugRenderer.clearAllInlineHints] 清除所有内联提示")
+        log("clearAllInlineHints", "=== 清除所有内联提示 ===")
         
         try {
-            // 清除所有标记的 highlighters
             val markupModel = editor.markupModel
             val allHighlighters = markupModel.allHighlighters
+            var removedCount = 0
             
             for (highlighter in allHighlighters) {
                 if (highlighter.getUserData(INLINE_DEBUG_KEY) == true) {
                     markupModel.removeHighlighter(highlighter)
+                    removedCount++
                 }
             }
             
-            // 清除所有 inlay hints
             val inlayModel = editor.inlayModel
             val allInlays = inlayModel.getInlineElementsInRange(0, editor.document.textLength)
+            var disposedCount = 0
             
             for (inlay in allInlays) {
                 inlay.dispose()
+                disposedCount++
             }
             
-            println("[clearAllInlineHints] ✓ 内联提示已清除")
+            log("clearAllInlineHints", "已清除 $removedCount 个 highlighters, $disposedCount 个 inlays")
             
         } catch (e: Exception) {
-            println("[clearAllInlineHints] ✗ 清除内联提示失败: ${e.message}")
+            log("clearAllInlineHints", "清除失败: ${e.message}", "ERROR")
             e.printStackTrace()
         }
     }

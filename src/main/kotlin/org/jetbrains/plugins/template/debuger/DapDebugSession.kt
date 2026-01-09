@@ -8,12 +8,54 @@ import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import java.text.SimpleDateFormat
+import java.util.Date
 
 /**
  * LLDB 调试会话管理器
  * 负责与 lldb 进程的通信、MI命令收发、响应解析
  */
 class DapDebugSession(private val executablePath: String) {
+    
+    companion object {
+        private val dateFormat = SimpleDateFormat("HH:mm:ss.SSS")
+        private var logSeq = AtomicInteger(0)
+        
+        /** 带时间戳的日志输出 */
+        fun log(tag: String, message: String, level: String = "INFO") {
+            val timestamp = dateFormat.format(Date())
+            val seq = logSeq.incrementAndGet()
+            val thread = Thread.currentThread().name
+            println("[$timestamp][$seq][$level][$thread][$tag] $message")
+        }
+        
+        /** 打印调用栈 */
+        fun logCallStack(tag: String, depth: Int = 5) {
+            val stackTrace = Thread.currentThread().stackTrace
+            val sb = StringBuilder("\n=== 调用栈 ===")
+            for (i in 3 until minOf(3 + depth, stackTrace.size)) {
+                val e = stackTrace[i]
+                sb.append("\n  -> ${e.className}.${e.methodName}(${e.fileName}:${e.lineNumber})")
+            }
+            log(tag, sb.toString())
+        }
+        
+        /** 打印分隔线 */
+        fun logSeparator(tag: String, title: String) {
+            log(tag, "\n" + "=".repeat(50) + "\n[ $title ]\n" + "=".repeat(50))
+        }
+        
+        /** 打印 LLDB 发送的数据 */
+        fun logLldbSend(command: String, seq: Int) {
+            log("LLDB-SEND", "\n>>> [SEQ=$seq] 发送命令: $command")
+        }
+        
+        /** 打印 LLDB 返回的数据 */
+        fun logLldbReceive(response: String, seq: Int?) {
+            val lines = response.split("\n").joinToString("\n    ") { it }
+            log("LLDB-RECV", "\n<<< [SEQ=$seq] 收到响应 (长度=${response.length}):\n    $lines")
+        }
+    }
     
     private val seqCounter = AtomicInteger(1)
     private val pendingRequests = ConcurrentHashMap<Int, (String) -> Unit>()
@@ -31,6 +73,9 @@ class DapDebugSession(private val executablePath: String) {
     private val outputBuffer = StringBuilder()
     private var lastStopDetected = false
     
+    // 标记是否收到了命令回显（以 (lldb) 开头的行）
+    private var commandEchoReceived = false
+    
     var onStopped: ((threadId: Int, reason: String) -> Unit)? = null
     var onOutput: ((category: String, output: String) -> Unit)? = null
     var onTerminated: (() -> Unit)? = null
@@ -39,159 +84,214 @@ class DapDebugSession(private val executablePath: String) {
      * 启动 lldb 进程
      */
     fun start() {
-        println("\n========== [DapDebugSession.start] 函数调用 ===========")
+        logSeparator("DapDebugSession.start", "启动 LLDB 进程")
+        logCallStack("DapDebugSession.start")
+        
         val lldbPath = findLldbPath()
-        println("[DapDebugSession.start] 使用 lldb: $lldbPath")
+        log("start", "使用 lldb 路径: $lldbPath")
+        log("start", "可执行文件路径: $executablePath")
             
         val cmd = GeneralCommandLine(lldbPath)
-        println("[DapDebugSession.start] 创建命令行: ${cmd.commandLineString}")
+        log("start", "命令行: ${cmd.commandLineString}")
             
-        // 创建 OSProcessHandler
         processHandler = OSProcessHandler(cmd)
         processHandler.startNotify()
-        println("[DapDebugSession.start] 进程已启动")
+        log("start", "LLDB 进程已启动, PID: ${processHandler.process.pid()}")
             
         val process = processHandler.process
         input = BufferedReader(InputStreamReader(process.inputStream))
         output = BufferedWriter(OutputStreamWriter(process.outputStream))
-        println("[DapDebugSession.start] 输入输出流已初始化")
+        log("start", "输入输出流已初始化")
             
         isRunning = true
             
-        // 启动消息读取线程
-        Thread {
+        Thread({
+            log("LLDB-Reader", "=== LLDB 输出监听线程启动 ===")
+            var lineCount = 0
             try {
-                println("[DapDebugSession.start] 消息读取线程已启动，开始监听 LLDB 输出...")
                 while (isRunning) {
-                    val line = input.readLine() ?: break
+                    val line = input.readLine()
+                    if (line == null) {
+                        log("LLDB-Reader", "readLine 返回 null, 退出循环")
+                        break
+                    }
                     if (line.isNotEmpty()) {
-                        println("[DapDebugSession] 收到 lldb 输出: $line")
+                        lineCount++
+                        log("LLDB-Reader", "[LINE#$lineCount] \"$line\"")
                         handleLldbOutput(line)
                     }
                 }
+                log("LLDB-Reader", "监听循环结束, 共读取 $lineCount 行")
             } catch (e: Exception) {
-                println("[DapDebugSession] 读取消息异常: ${e.message}")
+                log("LLDB-Reader", "读取异常: ${e.message}", "ERROR")
                 e.printStackTrace()
             }
-        }.start()
+        }, "LLDB-Reader-Thread").start()
             
-        // 等待 lldb 启动并显示第一个提示符
         Thread.sleep(300)
-            
-        println("[DapDebugSession.start] lldb 进程已启动，监听线程已开始")
-        println("========== [DapDebugSession.start] 函数结束 ==========\n")
+        log("start", "启动完成")
     }
     
     /**
-     * 初始化（lldb不需要显式的initialize，直接返回成功）
+     * 初始化
      */
     fun initialize(callback: (String) -> Unit) {
-        println("\n========== [DapDebugSession.initialize] 函数调用 ==========")
-        println("[DapDebugSession.initialize] LLDB不需要显式初始化，直接返回成功")
+        logSeparator("initialize", "初始化")
+        logCallStack("initialize")
+        log("initialize", "LLDB 不需要显式初始化, 当前状态: targetLoaded=$targetLoaded, isRunning=$isRunning")
         callback.invoke("initialized")
-        println("========== [DapDebugSession.initialize] 函数结束 ==========\n")
+        log("initialize", "初始化回调已执行")
     }
     
     /**
      * 加载目标程序
      */
     fun launch(program: String, args: List<String> = emptyList(), callback: (String) -> Unit) {
-        println("\n========== [DapDebugSession.launch] 函数调用 ==========")
-        println("[DapDebugSession.launch] program=$program, args=$args")
+        logSeparator("launch", "加载目标程序")
+        logCallStack("launch")
+        log("launch", "program: $program")
+        log("launch", "args: $args")
         
-        // 发送 target create 命令
         val targetCmd = "target create \"$program\""
+        log("launch", "发送 target create 命令")
+        
         sendCommand(targetCmd) { response ->
-            println("[DapDebugSession.launch] target create 响应: $response")
+            log("launch", "target create 响应:\n$response")
+            val success = !response.contains("error:")
+            log("launch", "target create 结果: ${if (success) "成功" else "失败"}")
+            
             targetLoaded = true
             
-            // 如果有参数，设置参数
             if (args.isNotEmpty()) {
                 val argsStr = args.joinToString(" ") { "\"$it\"" }
                 val settingsCmd = "settings set target.run-args $argsStr"
+                log("launch", "设置程序参数: $argsStr")
                 sendCommand(settingsCmd) { argsResponse ->
-                    println("[DapDebugSession.launch] 参数设置响应: $argsResponse")
+                    log("launch", "参数设置响应: $argsResponse")
                     callback.invoke("launched")
                 }
             } else {
                 callback.invoke("launched")
             }
         }
-        
-        println("========== [DapDebugSession.launch] 函数结束 ==========\n")
     }
     
     /**
      * 设置断点
      */
     fun setBreakpoints(sourceFile: String, lines: List<Int>, callback: (String) -> Unit) {
-        println("\n========== [DapDebugSession.setBreakpoints] 函数调用 ===========")
-        println("[DapDebugSession.setBreakpoints] 原始路径: $sourceFile")
-        println("[DapDebugSession.setBreakpoints] 断点行号: $lines")
+        logSeparator("setBreakpoints", "设置断点")
+        logCallStack("setBreakpoints")
+        log("setBreakpoints", "源文件: $sourceFile")
+        log("setBreakpoints", "行号列表: $lines")
+        log("setBreakpoints", "targetLoaded: $targetLoaded")
             
         if (lines.isEmpty()) {
+            log("setBreakpoints", "行号列表为空, 返回")
             callback.invoke("no breakpoints")
             return
         }
             
-        // 提取文件名（lldb 可能需要相对路径或文件名）
         val fileName = sourceFile.substringAfterLast('/')
-        println("[DapDebugSession.setBreakpoints] 提取的文件名: $fileName")
+        log("setBreakpoints", "提取的文件名: $fileName")
             
         var processed = 0
         var allResponses = StringBuilder()
             
-        lines.forEach { line ->
-            // 优先尝试使用完整路径，如果失败则回退到文件名
+        lines.forEachIndexed { index, line ->
+            log("setBreakpoints", "--- 处理断点 #${index + 1}/${lines.size}: 行 $line ---")
             val cmd = "breakpoint set --file \"$sourceFile\" --line $line"
-            println("[DapDebugSession.setBreakpoints] 发送命令: $cmd")
+            log("setBreakpoints", "LLDB 命令: $cmd")
                 
             sendCommand(cmd) { response ->
-                println("[DapDebugSession.setBreakpoints] ===== 断点设置响应 START =====")
-                println(response)
-                println("[DapDebugSession.setBreakpoints] ===== 断点设置响应 END =====")
-                    
-                // 检查是否有错误或pending
-                if (response.contains("error:") || response.contains("no locations")) {
-                    println("[DapDebugSession.setBreakpoints] ⚠️ 警告: 完整路径失败，尝试使用文件名")
-                    // 尝试使用文件名
+                log("setBreakpoints", "断点 $line 响应:\n$response")
+                val hasError = response.contains("error:") || response.contains("no locations")
+                
+                if (hasError) {
+                    log("setBreakpoints", "完整路径失败, 尝试使用文件名回退")
                     val fallbackCmd = "breakpoint set --file \"$fileName\" --line $line"
-                    println("[DapDebugSession.setBreakpoints] 回退命令: $fallbackCmd")
+                    log("setBreakpoints", "回退命令: $fallbackCmd")
+                    
                     sendCommand(fallbackCmd) { fallbackResponse ->
-                        println("[DapDebugSession.setBreakpoints] ===== 回退断点响应 START =====")
-                        println(fallbackResponse)
-                        println("[DapDebugSession.setBreakpoints] ===== 回退断点响应 END =====")
+                        log("setBreakpoints", "回退断点响应:\n$fallbackResponse")
                         allResponses.append(fallbackResponse).append("\n")
                         processed++
-                            
-                        if (processed == lines.size) {
-                            listAndVerifyBreakpoints(allResponses, callback)
-                        }
+                        log("setBreakpoints", "已处理: $processed/${lines.size}")
+                        if (processed == lines.size) listAndVerifyBreakpoints(allResponses, callback)
                     }
                 } else {
                     allResponses.append(response).append("\n")
                     processed++
-                        
-                    if (processed == lines.size) {
-                        listAndVerifyBreakpoints(allResponses, callback)
-                    }
+                    log("setBreakpoints", "已处理: $processed/${lines.size}")
+                    if (processed == lines.size) listAndVerifyBreakpoints(allResponses, callback)
                 }
             }
         }
-            
-        println("========== [DapDebugSession.setBreakpoints] 函数结束 ==========\n")
     }
         
     /**
      * 列出并验证断点
      */
     private fun listAndVerifyBreakpoints(allResponses: StringBuilder, callback: (String) -> Unit) {
-        println("[DapDebugSession.listAndVerifyBreakpoints] 所有断点已设置，列出验证...")
+        log("listAndVerifyBreakpoints", "验证断点设置结果")
         sendCommand("breakpoint list") { listResponse ->
-            println("[DapDebugSession.listAndVerifyBreakpoints] ===== 断点列表 START =====")
-            println(listResponse)
-            println("[DapDebugSession.listAndVerifyBreakpoints] ===== 断点列表 END =====")
+            log("listAndVerifyBreakpoints", "LLDB 断点列表:\n$listResponse")
+            val bpCount = "Breakpoint (\\d+):".toRegex().findAll(listResponse).count()
+            log("listAndVerifyBreakpoints", "断点总数: $bpCount")
             callback.invoke(allResponses.toString())
+        }
+    }
+    
+    /**
+     * 删除断点
+     */
+    fun deleteBreakpoint(sourceFile: String, line: Int, callback: (String) -> Unit) {
+        logSeparator("deleteBreakpoint", "删除断点")
+        logCallStack("deleteBreakpoint")
+        log("deleteBreakpoint", "文件: $sourceFile, 行号: $line")
+        
+        sendCommand("breakpoint list") { listResponse ->
+            log("deleteBreakpoint", "当前断点列表:\n$listResponse")
+            
+            val fileName = sourceFile.substringAfterLast('/')
+            val bpIdPattern = "(\\d+): file = '([^']+)', line = (\\d+)".toRegex()
+            val bpIdPattern2 = "(\\d+): .* at ([^:]+):(\\d+)".toRegex()
+            var breakpointId: Int? = null
+            
+            for (lineStr in listResponse.split("\n")) {
+                bpIdPattern.find(lineStr)?.let { match ->
+                    val id = match.groupValues[1].toIntOrNull()
+                    val file = match.groupValues[2]
+                    val lineNum = match.groupValues[3].toIntOrNull()
+                    log("deleteBreakpoint", "匹配模式1: id=$id, file=$file, lineNum=$lineNum")
+                    if (lineNum == line && (file == sourceFile || file.endsWith(fileName) || sourceFile.endsWith(file))) {
+                        breakpointId = id
+                    }
+                }
+                if (breakpointId == null) {
+                    bpIdPattern2.find(lineStr)?.let { match ->
+                        val id = match.groupValues[1].split(".")[0].toIntOrNull()
+                        val file = match.groupValues[2]
+                        val lineNum = match.groupValues[3].toIntOrNull()
+                        log("deleteBreakpoint", "匹配模式2: id=$id, file=$file, lineNum=$lineNum")
+                        if (lineNum == line && (file.endsWith(fileName) || fileName.contains(file))) {
+                            breakpointId = id
+                        }
+                    }
+                }
+            }
+            
+            if (breakpointId != null) {
+                val deleteCmd = "breakpoint delete $breakpointId"
+                log("deleteBreakpoint", "删除断点: $deleteCmd")
+                sendCommand(deleteCmd) { deleteResponse ->
+                    log("deleteBreakpoint", "删除响应: $deleteResponse")
+                    callback.invoke(deleteResponse)
+                }
+            } else {
+                log("deleteBreakpoint", "未找到匹配的断点", "WARN")
+                callback.invoke("breakpoint not found")
+            }
         }
     }
     
@@ -199,183 +299,155 @@ class DapDebugSession(private val executablePath: String) {
      * 配置完成，启动程序
      */
     fun configurationDone(callback: (String) -> Unit) {
-        println("\n========== [DapDebugSession.configurationDone] 函数调用 ===========")
-        println("[DapDebugSession.configurationDone] 准备运行程序...")
+        logSeparator("configurationDone", "配置完成/启动程序")
+        logCallStack("configurationDone")
+        log("configurationDone", "状态: targetLoaded=$targetLoaded, pendingRequests=${pendingRequests.size}")
             
-        // 发送 run 命令启动程序
         val cmd = "run"
+        log("configurationDone", "发送 run 命令")
+        
         sendCommand(cmd) { response ->
-            println("[DapDebugSession.configurationDone] ===== run 命令响应 START =====")
-            println(response)
-            println("[DapDebugSession.configurationDone] ===== run 命令响应 END =====")
+            log("configurationDone", "run 响应:\n$response")
+            val hasError = response.contains("error:")
+            val isLaunched = response.contains("Process") && response.contains("launched")
+            val isStopped = response.contains("stopped")
+            log("configurationDone", "响应分析: hasError=$hasError, isLaunched=$isLaunched, isStopped=$isStopped")
             
-            // 主动查询进程状态以确保UI同步
-            println("[DapDebugSession.configurationDone] 主动查询进程状态...")
-            Thread.sleep(100) // 短暂等待进程响应
+            Thread.sleep(100)
+            log("configurationDone", "查询进程状态")
             sendCommand("process status") { statusResponse ->
-                println("[DapDebugSession.configurationDone] ===== 进程状态 START =====")
-                println(statusResponse)
-                println("[DapDebugSession.configurationDone] ===== 进程状态 END =====")
-                
-                // 检查是否已停止
-                if (statusResponse.contains("stopped")) {
-                    println("[DapDebugSession.configurationDone] ✓ 检测到进程已停止，触发停止事件处理")
+                log("configurationDone", "进程状态:\n$statusResponse")
+                when {
+                    statusResponse.contains("stopped") -> log("configurationDone", "进程已停止(可能命中断点)")
+                    statusResponse.contains("running") -> log("configurationDone", "进程运行中")
+                    statusResponse.contains("exited") -> log("configurationDone", "进程已退出")
                 }
-                
                 callback.invoke("configuration done")
             }
         }
-            
-        println("========== [DapDebugSession.configurationDone] 函数结束 ==========\n")
     }
     
     /**
      * 继续执行
      */
     fun continue_(threadId: Int, callback: (String) -> Unit) {
-        println("\n========== [DapDebugSession.continue_] 函数调用 ==========")
-        println("[DapDebugSession.continue_] threadId=$threadId")
-        
-        val cmd = "continue"
-        sendCommand(cmd) { response ->
-            println("[DapDebugSession.continue_] 响应: $response")
+        logSeparator("continue_", "继续执行")
+        logCallStack("continue_")
+        log("continue_", "threadId=$threadId")
+        sendCommand("continue") { response ->
+            log("continue_", "响应:\n$response")
             callback.invoke(response)
         }
-        
-        println("========== [DapDebugSession.continue_] 函数结束 ==========\n")
     }
     
     /**
-     * 单步进入（step into）
+     * 单步进入
      */
     fun stepIn(threadId: Int, callback: (String) -> Unit) {
-        println("\n========== [DapDebugSession.stepIn] 函数调用 ==========")
-        println("[DapDebugSession.stepIn] threadId=$threadId")
-        
-        val cmd = "step"
-        sendCommand(cmd) { response ->
-            println("[DapDebugSession.stepIn] 响应: $response")
+        logSeparator("stepIn", "单步进入")
+        logCallStack("stepIn")
+        log("stepIn", "threadId=$threadId")
+        sendCommand("step") { response ->
+            log("stepIn", "响应:\n$response")
             callback.invoke(response)
         }
-        
-        println("========== [DapDebugSession.stepIn] 函数结束 ==========\n")
     }
     
     /**
-     * 单步跳过（step over）
+     * 单步跳过
      */
     fun stepOver(threadId: Int, callback: (String) -> Unit) {
-        println("\n========== [DapDebugSession.stepOver] 函数调用 ==========")
-        println("[DapDebugSession.stepOver] threadId=$threadId")
-        
-        val cmd = "next"
-        sendCommand(cmd) { response ->
-            println("[DapDebugSession.stepOver] 响应: $response")
+        logSeparator("stepOver", "单步跳过")
+        logCallStack("stepOver")
+        log("stepOver", "threadId=$threadId")
+        sendCommand("next") { response ->
+            log("stepOver", "响应:\n$response")
             callback.invoke(response)
         }
-        
-        println("========== [DapDebugSession.stepOver] 函数结束 ==========\n")
     }
     
     /**
-     * 单步退出（step out）
+     * 单步退出
      */
     fun stepOut(threadId: Int, callback: (String) -> Unit) {
-        println("\n========== [DapDebugSession.stepOut] 函数调用 ==========")
-        println("[DapDebugSession.stepOut] threadId=$threadId")
-        
-        val cmd = "finish"
-        sendCommand(cmd) { response ->
-            println("[DapDebugSession.stepOut] 响应: $response")
+        logSeparator("stepOut", "单步退出")
+        logCallStack("stepOut")
+        log("stepOut", "threadId=$threadId")
+        sendCommand("finish") { response ->
+            log("stepOut", "响应:\n$response")
             callback.invoke(response)
         }
-        
-        println("========== [DapDebugSession.stepOut] 函数结束 ==========\n")
     }
     
     /**
      * 获取线程列表
      */
     fun threads(callback: (String) -> Unit) {
-        println("\n========== [DapDebugSession.threads] 函数调用 ==========")
-        
-        val cmd = "thread list"
-        sendCommand(cmd) { response ->
-            println("[DapDebugSession.threads] 响应: $response")
+        logSeparator("threads", "获取线程列表")
+        logCallStack("threads")
+        sendCommand("thread list") { response ->
+            log("threads", "响应:\n$response")
             callback.invoke(response)
         }
-        
-        println("========== [DapDebugSession.threads] 函数结束 ==========\n")
     }
     
     /**
      * 获取堆栈跟踪
      */
     fun stackTrace(threadId: Int, callback: (String) -> Unit) {
-        println("\n========== [DapDebugSession.stackTrace] 函数调用 ==========")
-        println("[DapDebugSession.stackTrace] threadId=$threadId")
-        
-        val cmd = "thread backtrace"
-        sendCommand(cmd) { response ->
-            println("[DapDebugSession.stackTrace] 响应: $response")
+        logSeparator("stackTrace", "获取堆栈跟踪")
+        logCallStack("stackTrace")
+        log("stackTrace", "threadId=$threadId")
+        sendCommand("thread backtrace") { response ->
+            log("stackTrace", "堆栈响应:\n$response")
             callback.invoke(response)
         }
-        
-        println("========== [DapDebugSession.stackTrace] 函数结束 ==========\n")
     }
     
     /**
-     * 获取作用域（scopes）
+     * 获取作用域/变量
      */
     fun scopes(frameId: Int, callback: (String) -> Unit) {
-        println("\n========== [DapDebugSession.scopes] 函数调用 ==========")
-        println("[DapDebugSession.scopes] frameId=$frameId")
-        
-        val cmd = "frame variable"
-        sendCommand(cmd) { response ->
-            println("[DapDebugSession.scopes] 响应: $response")
+        logSeparator("scopes", "获取作用域")
+        logCallStack("scopes")
+        log("scopes", "frameId=$frameId")
+        sendCommand("frame variable") { response ->
+            log("scopes", "变量响应:\n$response")
             callback.invoke(response)
         }
-        
-        println("========== [DapDebugSession.scopes] 函数结束 ==========\n")
     }
     
     /**
      * 获取变量
      */
     fun variables(variablesReference: Int, callback: (String) -> Unit) {
-        println("\n========== [DapDebugSession.variables] 函数调用 ==========")
-        println("[DapDebugSession.variables] variablesReference=$variablesReference")
-        
-        val cmd = "frame variable"
-        sendCommand(cmd) { response ->
-            println("[DapDebugSession.variables] 响应: $response")
+        logSeparator("variables", "获取变量")
+        logCallStack("variables")
+        log("variables", "variablesReference=$variablesReference")
+        sendCommand("frame variable") { response ->
+            log("variables", "变量响应:\n$response")
             callback.invoke(response)
         }
-        
-        println("========== [DapDebugSession.variables] 函数结束 ==========\n")
     }
     
     /**
      * 断开连接
      */
     fun disconnect(callback: (String) -> Unit = {}) {
-        println("\n========== [DapDebugSession.disconnect] 函数调用 ==========")
-        
+        logSeparator("disconnect", "断开连接")
+        logCallStack("disconnect")
+        log("disconnect", "isRunning -> false")
         isRunning = false
         
-        val cmd = "quit"
         try {
-            output.write(cmd)
+            output.write("quit")
             output.newLine()
             output.flush()
-            println("[DapDebugSession.disconnect] 已发送退出命令")
+            log("disconnect", "quit 命令已发送")
         } catch (e: Exception) {
-            println("[DapDebugSession.disconnect] 发送退出命令异常: ${e.message}")
+            log("disconnect", "发送 quit 异常: ${e.message}", "ERROR")
         }
-        
         callback.invoke("disconnected")
-        println("========== [DapDebugSession.disconnect] 函数结束 ==========\n")
     }
     
     /**
@@ -383,101 +455,127 @@ class DapDebugSession(private val executablePath: String) {
      */
     private fun sendCommand(command: String, callback: (String) -> Unit) {
         val seq = seqCounter.getAndIncrement()
-            
-        println("\n========== [DapDebugSession.sendCommand] 发送命令到 lldb ===========")
-        println("[sendCommand] 命令: $command, seq=$seq")
+        
+        log("sendCommand", "=== 发送 LLDB 命令 ===")
+        log("sendCommand", "SEQ: $seq, 命令: $command")
+        log("sendCommand", "pendingRequests: ${pendingRequests.keys}")
+        logLldbSend(command, seq)
             
         pendingRequests[seq] = callback
-        println("[sendCommand] 已注册回调函数 for seq=$seq")
+        log("sendCommand", "已注册回调 seq=$seq")
             
         try {
             output.write(command)
             output.newLine()
             output.flush()
-            println("[sendCommand] ✓ 命令已成功发送: $command")
+            log("sendCommand", "命令已发送")
         } catch (e: Exception) {
-            println("[sendCommand] ✗ 发送命令失败: ${e.message}")
+            log("sendCommand", "发送失败: ${e.message}", "ERROR")
             e.printStackTrace()
         }
-        println("========== 命令发送结束 ==========\n")
     }
     
     /**
      * 处理 lldb 输出
      */
     private fun handleLldbOutput(line: String) {
-        println("[handleLldbOutput] 处理输出: $line")
+        log("handleLldbOutput", "=== 处理 LLDB 输出 ===")
+        log("handleLldbOutput", "原始行: \"$line\"")
+        log("handleLldbOutput", "pendingRequests: ${pendingRequests.keys}, commandEchoReceived: $commandEchoReceived")
         
-        // 先添加到缓冲区
+        val trimmedLine = line.trim()
+        val startsWithPrompt = trimmedLine.startsWith("(lldb)")
+        val isPromptOnly = trimmedLine == "(lldb)"
+        
+        log("handleLldbOutput", "startsWithPrompt=$startsWithPrompt, isPromptOnly=$isPromptOnly")
+        
         outputBuffer.append(line).append("\n")
+        log("handleLldbOutput", "outputBuffer 长度: ${outputBuffer.length}")
         
-        // 检查是否包含命令提示符（可能在行尾或单独一行）
-        val hasPrompt = line.trim() == "(lldb)" || line.trim().endsWith("(lldb)")
+        // 单独的 (lldb) 提示符
+        if (isPromptOnly && pendingRequests.isNotEmpty()) {
+            log("handleLldbOutput", "检测到 (lldb) 提示符, 触发回调")
+            triggerCallback()
+            return
+        }
         
-        if (hasPrompt) {
-            println("[handleLldbOutput] ✓ 检测到命令提示符（行内容: '$line'）")
-            
-            // 立即获取缓存的完整输出（在添加新内容之前）
-            val bufferedOutput = outputBuffer.toString()
-            println("[handleLldbOutput] 缓冲区内容长度: ${bufferedOutput.length}")
-            println("[handleLldbOutput] 缓冲区内容:\n$bufferedOutput")
-            outputBuffer.clear()
-            
-            // 获取并执行最早的待处理回调
-            val firstKey = pendingRequests.keys.minOrNull()
-            if (firstKey != null) {
-                val callback = pendingRequests.remove(firstKey)
-                if (callback != null) {
-                    println("[handleLldbOutput] 准备执行回调 for seq=$firstKey")
+        // 命令回显
+        if (startsWithPrompt && !isPromptOnly) {
+            log("handleLldbOutput", "检测到命令回显")
+            commandEchoReceived = true
+            return
+        }
+        
+        // 收到响应内容
+        if (commandEchoReceived && !startsWithPrompt && pendingRequests.isNotEmpty()) {
+            log("handleLldbOutput", "收到命令响应, 触发回调")
+            triggerCallback()
+            return
+        }
+        
+        log("handleLldbOutput", "继续等待更多输出...")
+        checkStopEvents(line)
+    }
+    
+    /**
+     * 触发最早的待处理回调
+     */
+    private fun triggerCallback() {
+        val bufferedOutput = outputBuffer.toString()
+        outputBuffer.clear()
+        commandEchoReceived = false
+        
+        val firstKey = pendingRequests.keys.minOrNull()
+        log("triggerCallback", "firstKey=$firstKey, output 长度=${bufferedOutput.length}")
+        logLldbReceive(bufferedOutput, firstKey)
+        
+        if (firstKey != null) {
+            val callback = pendingRequests.remove(firstKey)
+            if (callback != null) {
+                log("triggerCallback", "执行回调 seq=$firstKey")
+                try {
                     callback.invoke(bufferedOutput)
-                    println("[handleLldbOutput] ✓ 已执行回调 for seq=$firstKey")
-                } else {
-                    println("[handleLldbOutput] ⚠ 警告: seq=$firstKey 的回调为 null")
+                    log("triggerCallback", "回调执行成功")
+                } catch (e: Exception) {
+                    log("triggerCallback", "回调异常: ${e.message}", "ERROR")
+                    e.printStackTrace()
                 }
-            } else {
-                println("[handleLldbOutput] ⚠ 警告: 没有待处理的回调")
             }
         }
-            
-        // 检查是否是停止事件
+    }
+    
+    /**
+     * 检查停止事件
+     */
+    private fun checkStopEvents(line: String) {
         when {
-            // 检测 "Process XXXX stopped" 这是停止的第一行
             line.contains("Process") && line.contains("stopped") -> {
-                println("[handleLldbOutput] 检测到 Process stopped")
+                log("checkStopEvents", ">>> 检测到 Process stopped")
                 lastStopDetected = true
-                // 不立即触发，等待下一行的 thread 信息
             }
-            // 检测 "* thread #X" 这是停止的第二行，包含 stop reason
             lastStopDetected && line.startsWith("*") && line.contains("thread #") -> {
-                println("[handleLldbOutput] ✓✓✓ 检测到完整的停止事件 ✓✓✓")
+                log("checkStopEvents", ">>> 检测到完整的停止事件<<<")
                 lastStopDetected = false
                 
-                // 解析线程ID和停止原因
                 val threadId = extractThreadId(line)
                 val reason = extractStopReason(line)
-                println("[handleLldbOutput] threadId=$threadId, reason=$reason")
-                println("[handleLldbOutput] 调用 onStopped 回调...")
+                log("checkStopEvents", "停止事件: threadId=$threadId, reason=$reason")
+                log("checkStopEvents", "调用 onStopped 回调...")
                 
-                // 立即触发停止事件
                 onStopped?.invoke(threadId, reason)
-                println("[handleLldbOutput] onStopped 回调已执行")
             }
-            // 检测 "Process XXXX exited"
             line.contains("Process") && line.contains("exited") -> {
-                println("[handleLldbOutput] 检测到退出事件")
+                log("checkStopEvents", ">>> 检测到退出事件<<<")
                 onTerminated?.invoke()
             }
-            // 检测 "Process XXXX resuming"
             line.contains("Process") && line.contains("resuming") -> {
-                println("[handleLldbOutput] 程序恢复运行")
+                log("checkStopEvents", "程序恢复运行")
             }
-            // 断点设置确认
             line.contains("Breakpoint") && line.contains("where =") -> {
-                println("[handleLldbOutput] ✓ 断点设置确认: $line")
+                log("checkStopEvents", "断点设置确认: $line")
                 onOutput?.invoke("console", line)
             }
             else -> {
-                // 普通输出
                 onOutput?.invoke("console", line)
             }
         }
@@ -487,25 +585,26 @@ class DapDebugSession(private val executablePath: String) {
      * 从输出行中提取线程ID
      */
     private fun extractThreadId(line: String): Int {
-        // 尝试从输出中解析线程ID，例如 "* thread #1"
         val pattern = "thread #(\\d+)".toRegex()
         val match = pattern.find(line)
-        return match?.groupValues?.get(1)?.toIntOrNull() ?: 1
+        val threadId = match?.groupValues?.get(1)?.toIntOrNull() ?: 1
+        log("extractThreadId", "从 '$line' 提取 threadId=$threadId")
+        return threadId
     }
         
     /**
      * 从输出行中提取停止原因
      */
     private fun extractStopReason(line: String): String {
-        return when {
+        val reason = when {
             line.contains("breakpoint") -> "breakpoint"
             line.contains("step") -> "step"
             line.contains("signal") -> "signal"
             else -> "unknown"
         }
+        log("extractStopReason", "从 '$line' 提取 reason=$reason")
+        return reason
     }
-    
-
     
     /**
      * 查找 lldb 路径
@@ -516,12 +615,17 @@ class DapDebugSession(private val executablePath: String) {
             "lldb"
         )
         
-        return possiblePaths.firstOrNull { path ->
+        log("findLldbPath", "尝试查找 lldb: $possiblePaths")
+        
+        val path = possiblePaths.firstOrNull { p ->
             try {
-                java.io.File(path).exists() || path == "lldb"
+                java.io.File(p).exists() || p == "lldb"
             } catch (e: Exception) {
                 false
             }
-        } ?: throw IllegalStateException("lldb not found. Please install LLVM or add lldb to PATH")
+        } ?: throw IllegalStateException("lldb not found")
+        
+        log("findLldbPath", "找到 lldb: $path")
+        return path
     }
 }

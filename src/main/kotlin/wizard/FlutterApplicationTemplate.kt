@@ -6,11 +6,9 @@ import com.android.tools.idea.wizard.template.CheckBoxWidget
 import com.android.tools.idea.wizard.template.FormFactor
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.TemplateConstraint
-import com.android.tools.idea.wizard.template.TemplateData
 import com.android.tools.idea.wizard.template.TextFieldWidget
 import com.android.tools.idea.wizard.template.WizardUiContext
 import com.android.tools.idea.wizard.template.booleanParameter
-import com.android.tools.idea.wizard.template.impl.defaultPackageNameParameter
 import com.android.tools.idea.wizard.template.stringParameter
 import com.android.tools.idea.wizard.template.template
 import java.io.File
@@ -89,14 +87,13 @@ val flutterApplicationTemplate
             CheckBoxWidget(useKotlin),
             CheckBoxWidget(useSwift),
             CheckBoxWidget(useohos),
-
         )
-//        thumb { File("test.png") }
+        
+        // 先不使用自定义缩略图，使用 Android Studio 内置的
+        // 因为 thumb 方法把 File 当作相对于 Android Studio 模板资源目录的路径
+        thumb { File("compose-activity-material3").resolve("template_compose_empty_activity_material3.png") }
     }
 
 private fun getFlutterSdkPathFromEnv(): String {
     return System.getenv("FLUTTER_SDK") ?: ""
 }
-
-
-

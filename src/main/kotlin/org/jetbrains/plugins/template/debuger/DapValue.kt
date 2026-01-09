@@ -7,6 +7,7 @@ import com.intellij.xdebugger.frame.XValueChildrenList
 import com.intellij.xdebugger.frame.XValueNode
 import com.intellij.xdebugger.frame.XValuePlace
 import javax.swing.Icon
+import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.log
 
 /**
  * DAP 变量值 - 显示在 Variables 窗口
@@ -20,19 +21,25 @@ class DapValue(
     private val type = variableJson.get("type")?.asString
     private val variablesReference = variableJson.get("variablesReference")?.asInt ?: 0
     
+    init {
+        log("DapValue.init", "创建变量: name=${variableJson.get("name")}, value=$value, type=$type")
+    }
+    
     override fun computePresentation(node: XValueNode, place: XValuePlace) {
         val typeText = if (type != null) "($type) " else ""
+        log("computePresentation", "显示: $typeText$value, hasChildren=${variablesReference > 0}")
         node.setPresentation(null, typeText, value, variablesReference > 0)
     }
     
     override fun computeChildren(node: XCompositeNode) {
+        log("computeChildren", "variablesReference=$variablesReference")
         if (variablesReference <= 0) {
+            log("computeChildren", "无子元素")
             node.addChildren(XValueChildrenList.EMPTY, true)
             return
         }
         
-        // 对于 lldb，我们不支持复杂的子变量结构
-        // 如果需要，可以后续添加通过 print 命令解析
+        log("computeChildren", "复杂类型子变量暂不支持")
         node.addChildren(XValueChildrenList.EMPTY, true)
     }
 }
