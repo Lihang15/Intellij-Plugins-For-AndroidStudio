@@ -87,27 +87,10 @@ class DapDebugProcess(
                 log("sessionInitialized", "步骤6: 等待 300ms")
                 Thread.sleep(300)
                 
-                // 7. 标记 LLDB 已就绪
-                log("sessionInitialized", "步骤7: 调用 breakpointHandler.onLldbReady()")
-                breakpointHandler.onLldbReady()
-                log("sessionInitialized", "breakpointHandler.onLldbReady() 完成")
-                
-                // 8. 主动同步所有断点（因为 registerBreakpoint 可能未被调用）
-                log("sessionInitialized", "步骤8: 主动同步断点")
-                syncBreakpoints {
-                    log("sessionInitialized", "syncBreakpoints 完成")
-                    
-                    // 9. 等待断点同步
-                    log("sessionInitialized", "步骤9: 等待 300ms")
-                    Thread.sleep(300)
-                    
-                    // 10. 运行程序
-                    log("sessionInitialized", "步骤10: 发送 configurationDone 请求")
-                    dapSession.configurationDone { configResponse ->
-                        log("sessionInitialized", "configurationDone 响应: $configResponse")
-                        log("sessionInitialized", "调试会话初始化完成!")
-                    }
-                }
+                // 7. 主动同步已注册的断点（参考 Flutter doSetInitialBreakpointsAndResume）
+                log("sessionInitialized", "步骤7: 主动同步所有已注册的断点")
+                doSetInitialBreakpointsAndResume()
+                log("sessionInitialized", "断点同步完成")
             }
         }
         
@@ -211,11 +194,17 @@ class DapDebugProcess(
     
     /**
      * 处理 stopped 事件
+     * 
+     *  核心修复：这是 IntelliJ UI 同步的唯一入口
+     * 1. 必须调用 session.positionReached() 才能让 UI 响应
+     * 2. 必须在 EDT 线程执行 UI 更新
+     * 3. 必须等待 stackTrace 返回才能创建 SuspendContext
      */
     private fun handleStopped(threadId: Int, reason: String) {
-        logSeparator("handleStopped", "处理停止事件")
+        logSeparator("handleStopped", "处理停止事件 - IntelliJ UI 同步核心")
         logCallStack("handleStopped")
         log("handleStopped", "threadId=$threadId, reason=$reason")
+        log("handleStopped", "当前线程: ${Thread.currentThread().name}")
             
         // 更新当前线程 ID
         if (threadId != 0) {
@@ -225,68 +214,65 @@ class DapDebugProcess(
             log("handleStopped", "threadId 为 0", "WARN")
         }
             
-        // 获取堆栈信息
-        log("handleStopped", "请求堆栈跟踪信息")
+        // 关键：必须先获取完整堆栈信息，再调用 positionReached
+        log("handleStopped", "步骤1: 请求堆栈跟踪信息")
         try {
             dapSession.stackTrace(threadId) { response ->
-                log("handleStopped", "stackTrace 响应长度: ${response.length}")
+                log("handleStopped", "步骤2: stackTrace 响应长度: ${response.length}")
                 log("handleStopped", "stackTrace 响应:\n$response")
                     
                 try {
                     val stackFrames = parseStackTrace(response)
-                    log("handleStopped", "stackFrames 数量: ${stackFrames.size()}")
+                    log("handleStopped", "步骤3: 解析出 ${stackFrames.size()} 个栈帧")
                     
                     // 输出每个栈帧的详细信息
                     for (i in 0 until stackFrames.size()) {
                         val frame = stackFrames[i].asJsonObject
                         log("handleStopped", "  栈帧#$i: ${frame}")
                     }
-                        
-                    val suspendContext = DapSuspendContext(this, dapSession, threadId, stackFrames, session.project)
                     
-                    // 检查断点命中
-                    if (reason == "breakpoint" && stackFrames.size() > 0) {
-                        val firstFrame = stackFrames[0].asJsonObject
-                        val sourcePath = firstFrame.getAsJsonObject("source")?.get("path")?.asString
-                        val lineNum = firstFrame.get("line")?.asInt
-                        log("handleStopped", "断点命中位置: $sourcePath:$lineNum")
-                        
-                        if (sourcePath != null && lineNum != null) {
-                            val hitBreakpoint = breakpointHandler.findBreakpoint(sourcePath, lineNum)
-                            log("handleStopped", "查找断点结果: ${if (hitBreakpoint != null) "找到" else "未找到"}")
-                        }
+                    if (stackFrames.size() == 0) {
+                        log("handleStopped", "stackFrames 为空，无法同步 UI", "WARN")
+                        return@stackTrace
                     }
-                        
-                    if (stackFrames.size() > 0) {
-                        val firstFrame = stackFrames[0].asJsonObject
-                        val sourceInfo = firstFrame.getAsJsonObject("source")?.get("path")?.asString ?: "unknown"
-                        val lineInfo = firstFrame.get("line")?.asInt ?: 0
-                        log("handleStopped", "第一帧位置: $sourceInfo:$lineInfo")
-                    } else {
-                        log("handleStopped", "stackFrames 为空", "WARN")
-                    }
-                        
-                    // UI 线程更新
-                    log("handleStopped", "在 UI 线程调用 session.positionReached")
+                    
+                    //  关键：在 EDT 线程执行 UI 更新
+                    log("handleStopped", "步骤4: 在 EDT 线程调用 positionReached")
                     com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
                         try {
-                            log("handleStopped", "正在调用 positionReached...")
-                            session.positionReached(suspendContext)
-                            log("handleStopped", "positionReached 调用成功")
+                            log("handleStopped", "步骤5: 创建 SuspendContext")
+                            val suspendContext = DapSuspendContext(
+                                this, 
+                                dapSession, 
+                                threadId, 
+                                stackFrames, 
+                                session.project
+                            )
                             
+                            log("handleStopped", "步骤6: 调用 session.positionReached() 【UI 同步的核心】")
+                            session.positionReached(suspendContext)
+                            log("handleStopped", "步骤7: positionReached 调用成功 ")
+                            
+                            // 如果是断点命中，更新断点状态
                             if (reason == "breakpoint" && stackFrames.size() > 0) {
                                 val firstFrame = stackFrames[0].asJsonObject
                                 val sourcePath = firstFrame.getAsJsonObject("source")?.get("path")?.asString
                                 val lineNum = firstFrame.get("line")?.asInt
                                 
+                                log("handleStopped", "步骤8: 断点命中位置: $sourcePath:$lineNum")
+                                
                                 if (sourcePath != null && lineNum != null) {
                                     val hitBreakpoint = breakpointHandler.findBreakpoint(sourcePath, lineNum)
                                     if (hitBreakpoint != null) {
                                         session.setBreakpointVerified(hitBreakpoint)
-                                        log("handleStopped", "断点 UI 状态已更新")
+                                        log("handleStopped", "步骤9: 断点 UI 状态已更新 ")
+                                    } else {
+                                        log("handleStopped", "步骤9: 未找到匹配的断点", "WARN")
                                     }
                                 }
                             }
+                            
+                            log("handleStopped", "========== UI 同步完成 ==========")
                         } catch (e: Exception) {
                             log("handleStopped", "positionReached 异常: ${e.message}", "ERROR")
                             e.printStackTrace()
@@ -399,7 +385,41 @@ class DapDebugProcess(
     }
     
     /**
-     * 同步断点到 lldb
+     * 同步断点到 lldb (参考 Flutter 的 doSetInitialBreakpointsAndResume)
+     * 1. 首先同步已注册的断点（来自 registerBreakpoint）
+     * 2. 主动从 breakpointManager 获取所有 C++ 断点
+     */
+    private fun doSetInitialBreakpointsAndResume() {
+        logSeparator("doSetInitialBreakpointsAndResume", "初始化断点同步")
+        logCallStack("doSetInitialBreakpointsAndResume")
+        
+        // 1. 标记 LLDB 已就绪，触发 onLldbReady 同步缓存的断点
+        log("doSetInitialBreakpointsAndResume", "步骤1: 调用 breakpointHandler.onLldbReady()")
+        breakpointHandler.onLldbReady()
+        log("doSetInitialBreakpointsAndResume", "breakpointHandler.onLldbReady() 完成")
+        
+        // 2. 等待断点同步
+        Thread.sleep(300)
+        
+        // 3. 主动从 breakpointManager 同步所有 C++ 断点
+        log("doSetInitialBreakpointsAndResume", "步骤2: 主动同步 breakpointManager 中的所有断点")
+        syncBreakpoints {
+            log("doSetInitialBreakpointsAndResume", "syncBreakpoints 完成")
+            
+            // 4. 等待断点同步
+            Thread.sleep(300)
+            
+            // 5. 运行程序
+            log("doSetInitialBreakpointsAndResume", "步骤3: 发送 configurationDone 请求")
+            dapSession.configurationDone { configResponse ->
+                log("doSetInitialBreakpointsAndResume", "configurationDone 响应: $configResponse")
+                log("doSetInitialBreakpointsAndResume", "调试会话初始化完成!")
+            }
+        }
+    }
+    
+    /**
+     * 从 breakpointManager 同步所有 C++ 断点
      */
     private fun syncBreakpoints(onComplete: () -> Unit) {
         logSeparator("syncBreakpoints", "同步断点")

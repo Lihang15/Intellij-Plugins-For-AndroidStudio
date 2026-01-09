@@ -477,6 +477,10 @@ class DapDebugSession(private val executablePath: String) {
     
     /**
      * 处理 lldb 输出
+     * 
+     * 关键改进：
+     * 1. 停止事件（断点/step）立即推送，不等待回调
+     * 2. 命令响应仍然走回调机制
      */
     private fun handleLldbOutput(line: String) {
         log("handleLldbOutput", "=== 处理 LLDB 输出 ===")
@@ -488,6 +492,9 @@ class DapDebugSession(private val executablePath: String) {
         val isPromptOnly = trimmedLine == "(lldb)"
         
         log("handleLldbOutput", "startsWithPrompt=$startsWithPrompt, isPromptOnly=$isPromptOnly")
+        
+        // 关键修复：先检查停止事件（在缓冲之前）
+        checkStopEvents(line)
         
         outputBuffer.append(line).append("\n")
         log("handleLldbOutput", "outputBuffer 长度: ${outputBuffer.length}")
@@ -506,7 +513,7 @@ class DapDebugSession(private val executablePath: String) {
             return
         }
         
-        // 收到响应内容
+        // 收到响应内容后触发回调
         if (commandEchoReceived && !startsWithPrompt && pendingRequests.isNotEmpty()) {
             log("handleLldbOutput", "收到命令响应, 触发回调")
             triggerCallback()
@@ -514,7 +521,6 @@ class DapDebugSession(private val executablePath: String) {
         }
         
         log("handleLldbOutput", "继续等待更多输出...")
-        checkStopEvents(line)
     }
     
     /**
@@ -546,6 +552,10 @@ class DapDebugSession(private val executablePath: String) {
     
     /**
      * 检查停止事件
+     * 
+     * 关键修复：
+     * 1. 停止事件必须 **立即异步触发**，不能等待命令回调
+     * 2. 使用独立线程推送，避免阻塞 LLDB 输出解析
      */
     private fun checkStopEvents(line: String) {
         when {
@@ -554,19 +564,30 @@ class DapDebugSession(private val executablePath: String) {
                 lastStopDetected = true
             }
             lastStopDetected && line.startsWith("*") && line.contains("thread #") -> {
-                log("checkStopEvents", ">>> 检测到完整的停止事件<<<")
+                log("checkStopEvents", ">>> 检测到完整的停止事件 <<<")
                 lastStopDetected = false
                 
                 val threadId = extractThreadId(line)
                 val reason = extractStopReason(line)
                 log("checkStopEvents", "停止事件: threadId=$threadId, reason=$reason")
-                log("checkStopEvents", "调用 onStopped 回调...")
                 
-                onStopped?.invoke(threadId, reason)
+                // 关键：立即在新线程中触发，不阻塞 LLDB 输出
+                Thread {
+                    try {
+                        log("checkStopEvents", "异步触发 onStopped 回调...")
+                        onStopped?.invoke(threadId, reason)
+                        log("checkStopEvents", "onStopped 回调完成")
+                    } catch (e: Exception) {
+                        log("checkStopEvents", "onStopped 回调异常: ${e.message}", "ERROR")
+                        e.printStackTrace()
+                    }
+                }.start()
             }
             line.contains("Process") && line.contains("exited") -> {
-                log("checkStopEvents", ">>> 检测到退出事件<<<")
-                onTerminated?.invoke()
+                log("checkStopEvents", ">>> 检测到退出事件 <<<")
+                Thread {
+                    onTerminated?.invoke()
+                }.start()
             }
             line.contains("Process") && line.contains("resuming") -> {
                 log("checkStopEvents", "程序恢复运行")
@@ -576,7 +597,9 @@ class DapDebugSession(private val executablePath: String) {
                 onOutput?.invoke("console", line)
             }
             else -> {
-                onOutput?.invoke("console", line)
+                if (!line.startsWith("(lldb)")) {
+                    onOutput?.invoke("console", line)
+                }
             }
         }
     }

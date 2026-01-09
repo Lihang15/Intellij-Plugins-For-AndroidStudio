@@ -7,16 +7,16 @@ import java.util.concurrent.CopyOnWriteArrayList
 import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.log
 import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.logSeparator
 import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.logCallStack
-import org.jetbrains.plugins.template.cpp.CppLineBreakpointType
-import org.jetbrains.plugins.template.cpp.CppBreakpointProperties
 
 /**
- * DAP 行断点处理器 - 专门处理 C++ 断点
+ * DAP 行断点处理器 - 使用泛型支持所有文件类型（包括 C++）
+ * 参考 Flutter 插件的 DartVmServiceBreakpointHandler 实现
  */
+@Suppress("UNCHECKED_CAST")
 class DapBreakpointHandler(
     private val process: DapDebugProcess
-) : XBreakpointHandler<XLineBreakpoint<CppBreakpointProperties>>(
-    CppLineBreakpointType::class.java
+) : XBreakpointHandler<XLineBreakpoint<XBreakpointProperties<*>>>(
+    XLineBreakpointType::class.java as Class<out XBreakpointType<XLineBreakpoint<XBreakpointProperties<*>>, *>>
 ) {
     
     init {
@@ -24,14 +24,14 @@ class DapBreakpointHandler(
         logCallStack("DapBreakpointHandler.init")
     }
     
-    private val registeredBreakpoints = ConcurrentHashMap<String, XLineBreakpoint<CppBreakpointProperties>>()
+    private val registeredBreakpoints = ConcurrentHashMap<String, XLineBreakpoint<XBreakpointProperties<*>>>()
     private val lldbBreakpointIds = ConcurrentHashMap<String, Int>()
-    private val pendingBreakpoints = CopyOnWriteArrayList<XLineBreakpoint<CppBreakpointProperties>>()
+    private val pendingBreakpoints = CopyOnWriteArrayList<XLineBreakpoint<XBreakpointProperties<*>>>()
     
     @Volatile
     private var lldbReady = false
 
-    override fun registerBreakpoint(breakpoint: XLineBreakpoint<CppBreakpointProperties>) {
+    override fun registerBreakpoint(breakpoint: XLineBreakpoint<XBreakpointProperties<*>>) {
         logSeparator("registerBreakpoint", "注册断点")
         logCallStack("registerBreakpoint")
         
@@ -65,7 +65,7 @@ class DapBreakpointHandler(
     /**
      * 同步单个断点到 LLDB
      */
-    private fun syncBreakpointToLldb(breakpoint: XLineBreakpoint<CppBreakpointProperties>, filePath: String, line: Int, key: String) {
+    private fun syncBreakpointToLldb(breakpoint: XLineBreakpoint<XBreakpointProperties<*>>, filePath: String, line: Int, key: String) {
         log("syncBreakpointToLldb", "=== 同步断点到 LLDB ===")
         log("syncBreakpointToLldb", "key=$key, filePath=$filePath, line=$line")
         
@@ -124,7 +124,7 @@ class DapBreakpointHandler(
     }
 
     override fun unregisterBreakpoint(
-        breakpoint: XLineBreakpoint<CppBreakpointProperties>,
+        breakpoint: XLineBreakpoint<XBreakpointProperties<*>>,
         temporary: Boolean
     ) {
         logSeparator("unregisterBreakpoint", "注销断点")
@@ -151,15 +151,15 @@ class DapBreakpointHandler(
     /**
      * 获取已注册的断点
      */
-    fun getRegisteredBreakpoints(): Map<String, XLineBreakpoint<CppBreakpointProperties>> {
-        log("getRegisteredBreakpoints", "返回 ${registeredBreakpoints.size} 个断点")
-        return registeredBreakpoints
+    fun getXBreakpoints(): Set<XLineBreakpoint<XBreakpointProperties<*>>> {
+        log("getXBreakpoints", "返回 ${registeredBreakpoints.size} 个断点")
+        return registeredBreakpoints.values.toSet()
     }
     
     /**
      * 根据文件和行号查找断点
      */
-    fun findBreakpoint(filePath: String, line: Int): XLineBreakpoint<CppBreakpointProperties>? {
+    fun findBreakpoint(filePath: String, line: Int): XLineBreakpoint<XBreakpointProperties<*>>? {
         log("findBreakpoint", "=== 查找断点 ===")
         log("findBreakpoint", "查找: $filePath:$line")
         log("findBreakpoint", "已注册断点: ${registeredBreakpoints.keys}")

@@ -37,9 +37,6 @@
         <configurationType implementation="org.jetbrains.plugins.template.cpp.MyMainCppConfigurationType"/>
         <runConfigurationProducer implementation="org.jetbrains.plugins.template.cpp.MyMainCppRunConfigurationProducer"/>
         <programRunner implementation="org.jetbrains.plugins.template.cpp.MyMainCppDebugRunner"/>
-        
-        <!-- C++ 断点类型注册 - 用于在 .cpp 文件中设置断点 -->
-        <xdebugger.breakpointType implementation="org.jetbrains.plugins.template.cpp.CppLineBreakpointType"/>
     </extensions>
 
 

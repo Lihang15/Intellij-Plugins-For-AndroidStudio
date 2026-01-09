@@ -115,43 +115,65 @@ class DapStackFrame(
     
     /**
      * 解析 lldb 变量输出
+     * 
+     *  关键修复：不再使用 split("=") 人肉解析
+     * 
+     * LLDB 输出示例：
+     * (int) a = 10
+     * (std::vector<int>) vec = size=3 { [0]=1, [1]=2, [2]=3 }
+     * (std::string) str = "hello = world"
+     * 
+     * 新解析策略：
+     * 1. 找到第一个 ')' 之后的第一个 '=' 作为分隔符
+     * 2. 保留原始格式，不进行 trim
+     * 3. 对复杂类型（vector/map/string）直接显示 LLDB 原始输出
      */
     private fun parseVariablesOutput(output: String): XValueChildrenList {
         log("parseVariablesOutput", "=== 解析变量输出 ===")
-        val children = XValueChildrenList()
+        log("parseVariablesOutput", "原始输出:\n$output")
         
+        val children = XValueChildrenList()
         val lines = output.split("\n")
         var varCount = 0
+        
         for (line in lines) {
             val trimmed = line.trim()
-            if (trimmed.isEmpty() || trimmed.startsWith("frame #") || trimmed.startsWith("(lldb)")) {
+            
+            // 跳过空行和提示符
+            if (trimmed.isEmpty() || 
+                trimmed.startsWith("frame #") || 
+                trimmed.startsWith("(lldb)") ||
+                trimmed.startsWith("Process") ||
+                trimmed.startsWith("thread #") ||
+                trimmed.startsWith("*")) {
                 continue
             }
             
-            val parts = trimmed.split("=")
-            if (parts.size >= 2) {
-                val leftPart = parts[0].trim()
-                val value = parts.drop(1).joinToString("=").trim()
+            // 关键：正确解析变量格式: (type) name = value
+            val varPattern = """^\(([^)]+)\)\s+(\w+)\s*=\s*(.+)$""".toRegex()
+            val match = varPattern.find(trimmed)
+            
+            if (match != null) {
+                val varType = match.groupValues[1]
+                val varName = match.groupValues[2]
+                val varValue = match.groupValues[3]  // 保留原始值，包括所有 '='
                 
-                val nameMatch = "\\)\\s+(\\w+)$".toRegex().find(leftPart)
-                if (nameMatch != null) {
-                    val varName = nameMatch.groupValues[1]
-                    val varType = leftPart.substringBefore(")").substringAfter("(")
-                    
-                    log("parseVariablesOutput", "变量: $varName = $value (类型: $varType)")
-                    
-                    val varJson = com.google.gson.JsonObject()
-                    varJson.addProperty("name", varName)
-                    varJson.addProperty("value", value)
-                    varJson.addProperty("type", varType)
-                    varJson.addProperty("variablesReference", 0)
-                    
-                    val dapValue = DapValue(dapSession, varJson)
-                    children.add(varName, dapValue)
-                    varCount++
-                    
-                    showVariableInEditor(varName, value)
-                }
+                log("parseVariablesOutput", "解析成功: name=$varName, type=$varType, value=$varValue")
+                
+                val varJson = com.google.gson.JsonObject()
+                varJson.addProperty("name", varName)
+                varJson.addProperty("value", varValue)
+                varJson.addProperty("type", varType)
+                varJson.addProperty("variablesReference", 0)
+                
+                val dapValue = DapValue(dapSession, varJson)
+                children.add(varName, dapValue)
+                varCount++
+                
+                // 在编辑器中显示变量值
+                showVariableInEditor(varName, varValue)
+            } else {
+                log("parseVariablesOutput", "无法解析行: $trimmed", "WARN")
             }
         }
         
