@@ -39,7 +39,6 @@ dependencies {
 
     // JFlex for lexer generation
     compileOnly("de.jflex:jflex:1.8.2")
-    compileOnly("de.jflex:jflex:1.8.2")
 
     // IntelliJ Platform Gradle Plugin Dependencies Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html
     intellijPlatform {
@@ -158,6 +157,13 @@ tasks {
 
     publishPlugin {
         dependsOn(patchChangelog)
+    }
+    
+    // 将模板目录打包到插件中
+    prepareSandbox {
+        from("kmptcp_kotlin_sample_template") {
+            into("${intellijPlatform.projectName.get()}/kmptcp_kotlin_sample_template")
+        }
     }
 }
 

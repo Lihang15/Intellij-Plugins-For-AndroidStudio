@@ -37,6 +37,9 @@
         <configurationType implementation="org.jetbrains.plugins.template.cpp.MyMainCppConfigurationType"/>
         <runConfigurationProducer implementation="org.jetbrains.plugins.template.cpp.MyMainCppRunConfigurationProducer"/>
         <programRunner implementation="org.jetbrains.plugins.template.cpp.MyMainCppDebugRunner"/>
+        
+        <!-- KMP-OHOS 项目生成器 (IntelliJ Platform API) -->
+        <directoryProjectGenerator implementation="wizard.KmpOhosProjectGenerator"/>
     </extensions>
 
 
