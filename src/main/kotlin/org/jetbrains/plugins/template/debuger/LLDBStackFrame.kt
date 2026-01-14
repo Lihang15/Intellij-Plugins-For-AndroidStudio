@@ -12,14 +12,14 @@ import com.intellij.xdebugger.frame.XCompositeNode
 import com.intellij.xdebugger.frame.XStackFrame
 import com.intellij.xdebugger.frame.XValueChildrenList
 import com.intellij.xdebugger.evaluation.XDebuggerEvaluator
-import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.log
-import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.logSeparator
+import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.log
+import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.logSeparator
 
 /**
- * DAP 栈帧 - 显示在调用堆栈窗口
+ * _ 栈帧 - 显示在调用堆栈窗口
  */
-class DapStackFrame(
-    private val dapSession: DapDebugSession,
+class LLDBStackFrame(
+    private val _Session: LLDBDebugSession,
     private val frameJson: JsonObject,
     private val project: com.intellij.openapi.project.Project,
     private val threadId: Int = 1
@@ -34,11 +34,11 @@ class DapStackFrame(
         ?.get("path")?.asString
     
     // 创建表达式求值器
-    private val evaluator = DapEvaluator(dapSession, threadId, frameId)
+    private val evaluator = LLDBEvaluator(_Session, threadId, frameId)
     
     init {
-        log("DapStackFrame.init", "创建栈帧: frameId=$frameId, name=$name, line=$line, sourcePath=$sourcePath")
-        log("DapStackFrame.init", "完整 JSON: $frameJson")
+        log("LLDBStackFrame.init", "创建栈帧: frameId=$frameId, name=$name, line=$line, sourcePath=$sourcePath")
+        log("LLDBStackFrame.init", "完整 JSON: $frameJson")
     }
     
     override fun getSourcePosition(): XSourcePosition? {
@@ -88,7 +88,7 @@ class DapStackFrame(
         }
         
         log("getSourcePosition", "找到文件: ${file.path}")
-        log("getSourcePosition", "创建位置: line=${line - 1} (DAP line=$line)")
+        log("getSourcePosition", "创建位置: line=${line - 1} (_ line=$line)")
         
         val position = XDebuggerUtil.getInstance().createPosition(file, line - 1)
         log("getSourcePosition", "位置创建成功")
@@ -106,7 +106,7 @@ class DapStackFrame(
     
     /**
      * 获取表达式求值器
-     * 返回 DapEvaluator 实例，支持在调试窗口中计算表达式
+     * 返回 LLDBEvaluator 实例，支持在调试窗口中计算表达式
      */
     override fun getEvaluator(): XDebuggerEvaluator? {
         log("getEvaluator", "返回求值器: frameId=$frameId, threadId=$threadId")
@@ -117,7 +117,7 @@ class DapStackFrame(
         logSeparator("computeChildren", "获取变量")
         log("computeChildren", "frameId=$frameId")
         
-        dapSession.scopes(frameId) { response ->
+        _Session.scopes(frameId) { response ->
             log("computeChildren", "scopes 响应:\n$response")
             
             val children = parseVariablesOutput(response)
@@ -180,8 +180,8 @@ class DapStackFrame(
                 varJson.addProperty("type", varType)
                 varJson.addProperty("variablesReference", 0)
                 
-                val dapValue = DapValue(dapSession, varJson)
-                children.add(varName, dapValue)
+                val LLDBValue = LLDBValue(_Session, varJson)
+                children.add(varName, LLDBValue)
                 varCount++
                 
                 // 在编辑器中显示变量值
@@ -229,7 +229,7 @@ class DapStackFrame(
                         return@invokeLater
                     }
                     
-                    DapInlineDebugRenderer.showVariableValue(editor, lineNumber, varName, varValue)
+                    LLDBInlineDebugRenderer.showVariableValue(editor, lineNumber, varName, varValue)
                     
                 } catch (e: Exception) {
                     log("showVariableInEditor", "异常: ${e.message}", "ERROR")

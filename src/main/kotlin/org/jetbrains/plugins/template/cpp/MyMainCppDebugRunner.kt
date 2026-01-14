@@ -11,14 +11,14 @@ import com.intellij.execution.ui.RunContentDescriptor
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugSession
 import com.intellij.xdebugger.XDebuggerManager
-import org.jetbrains.plugins.template.debuger.DapDebugProcess
+import org.jetbrains.plugins.template.debuger.LLDBDebugProcess
 import java.io.File
 
 /**
  * MyMainApp 的 Debug Runner：
  * - 只对 Debug Executor 生效（Run 逻辑仍走默认 Runner）
  * - 先编译 my_main.cpp 生成 mymaincpp 可执行文件
- * - 启动 XDebugSession + DapDebugProcess，连接 lldb-dap 调试器
+ * - 启动 XDebugSession + LLDBDebugProcess，连接 lldb-_ 调试器
  */
 class MyMainCppDebugRunner : GenericProgramRunner<RunnerSettings>() {
 
@@ -61,8 +61,8 @@ class MyMainCppDebugRunner : GenericProgramRunner<RunnerSettings>() {
             environment,
             object : com.intellij.xdebugger.XDebugProcessStarter() {
                 override fun start(session: XDebugSession): XDebugProcess {
-                    println("[doExecute] 创建 DapDebugProcess")
-                    return DapDebugProcess(session, outputPath)
+                    println("[doExecute] 创建 LLDBDebugProcess")
+                    return LLDBDebugProcess(session, outputPath)
                 }
             }
         )

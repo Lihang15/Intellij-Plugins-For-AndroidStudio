@@ -11,7 +11,7 @@ import com.intellij.openapi.vfs.VfsUtil
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 
-fun RecipeExecutor.flutterApplicationRecipe(
+fun RecipeExecutor.KMPApplicationRecipe(
     moduleData: ModuleTemplateData,
     org: String,
     useKotlin: Boolean,
@@ -332,4 +332,4 @@ private fun openProject(projectPath: Path) {
 }
 
 // 仅供引用
-private object FlutterApplicationRecipe
+private object KMPApplicationRecipe

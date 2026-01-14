@@ -3,20 +3,20 @@ package org.jetbrains.plugins.template.debuger
 import com.google.gson.JsonArray
 import com.intellij.xdebugger.frame.XExecutionStack
 import com.intellij.xdebugger.frame.XStackFrame
-import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.log
+import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.log
 
 /**
- * DAP 执行栈
+ * _ 执行栈
  */
-class DapExecutionStack(
-    private val dapSession: DapDebugSession,
+class LLDBExecutionStack(
+    private val _Session: LLDBDebugSession,
     private val threadId: Int,
     private val stackFrames: JsonArray,
     private val project: com.intellij.openapi.project.Project
 ) : XExecutionStack("Thread $threadId") {
     
     init {
-        log("DapExecutionStack.init", "创建执行栈: threadId=$threadId, 栈帧数=${stackFrames.size()}")
+        log("LLDBExecutionStack.init", "创建执行栈: threadId=$threadId, 栈帧数=${stackFrames.size()}")
     }
     
     override fun getTopFrame(): XStackFrame? {
@@ -28,7 +28,7 @@ class DapExecutionStack(
         
         val topFrame = stackFrames[0].asJsonObject
         log("getTopFrame", "返回顶层栈帧: $topFrame")
-        return DapStackFrame(dapSession, topFrame, project, threadId)
+        return LLDBStackFrame(_Session, topFrame, project, threadId)
     }
     
     override fun computeStackFrames(firstFrameIndex: Int, container: XStackFrameContainer?) {
@@ -38,7 +38,7 @@ class DapExecutionStack(
         for (i in firstFrameIndex until stackFrames.size()) {
             val frameJson = stackFrames[i].asJsonObject
             log("computeStackFrames", "添加栈帧#$i: $frameJson")
-            frames.add(DapStackFrame(dapSession, frameJson, project, threadId))
+            frames.add(LLDBStackFrame(_Session, frameJson, project, threadId))
         }
         
         log("computeStackFrames", "共添加 ${frames.size} 个栈帧")

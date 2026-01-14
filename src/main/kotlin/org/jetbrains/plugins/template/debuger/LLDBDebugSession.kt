@@ -15,7 +15,7 @@ import java.util.Date
  * LLDB 调试会话管理器
  * 负责与 lldb 进程的通信、MI命令收发、响应解析
  */
-class DapDebugSession(private val executablePath: String) {
+class LLDBDebugSession(private val executablePath: String) {
     
     companion object {
         private val dateFormat = SimpleDateFormat("HH:mm:ss.SSS")
@@ -84,8 +84,8 @@ class DapDebugSession(private val executablePath: String) {
      * 启动 lldb 进程
      */
     fun start() {
-        logSeparator("DapDebugSession.start", "启动 LLDB 进程")
-        logCallStack("DapDebugSession.start")
+        logSeparator("LLDBDebugSession.start", "启动 LLDB 进程")
+        logCallStack("LLDBDebugSession.start")
         
         val lldbPath = findLldbPath()
         log("start", "使用 lldb 路径: $lldbPath")

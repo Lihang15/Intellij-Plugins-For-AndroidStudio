@@ -4,24 +4,24 @@ import com.intellij.xdebugger.breakpoints.*
 import com.intellij.openapi.application.ApplicationManager
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
-import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.log
-import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.logSeparator
-import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.logCallStack
+import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.log
+import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.logSeparator
+import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.logCallStack
 
 /**
- * DAP 行断点处理器 - 使用泛型支持所有文件类型（包括 C++）
+ * 行断点处理器 - 使用泛型支持所有文件类型（包括 C++）
  * 参考 Flutter 插件的 DartVmServiceBreakpointHandler 实现
  */
 @Suppress("UNCHECKED_CAST")
-class DapBreakpointHandler(
-    private val process: DapDebugProcess
+class LLDBBreakpointHandler(
+    private val process: LLDBDebugProcess
 ) : XBreakpointHandler<XLineBreakpoint<XBreakpointProperties<*>>>(
     XLineBreakpointType::class.java as Class<out XBreakpointType<XLineBreakpoint<XBreakpointProperties<*>>, *>>
 ) {
     
     init {
-        log("DapBreakpointHandler.init", "构造函数调用")
-        logCallStack("DapBreakpointHandler.init")
+        log("LLDBBreakpointHandler.init", "构造函数调用")
+        logCallStack("LLDBBreakpointHandler.init")
     }
     
     private val registeredBreakpoints = ConcurrentHashMap<String, XLineBreakpoint<XBreakpointProperties<*>>>()
@@ -69,8 +69,8 @@ class DapBreakpointHandler(
         log("syncBreakpointToLldb", "=== 同步断点到 LLDB ===")
         log("syncBreakpointToLldb", "key=$key, filePath=$filePath, line=$line")
         
-        val dapSession = process.getDapSession()
-        dapSession.setBreakpoints(filePath, listOf(line)) { response ->
+        val _Session = process.get_Session()
+        _Session.setBreakpoints(filePath, listOf(line)) { response ->
             log("syncBreakpointToLldb", "setBreakpoints 响应: $response")
             
             val success = !response.contains("error:") && 
@@ -141,8 +141,8 @@ class DapBreakpointHandler(
         pendingBreakpoints.remove(breakpoint)
         
         if (lldbReady) {
-            val dapSession = process.getDapSession()
-            dapSession.deleteBreakpoint(filePath, line) { response ->
+            val _Session = process.get_Session()
+            _Session.deleteBreakpoint(filePath, line) { response ->
                 log("unregisterBreakpoint", "deleteBreakpoint 响应: $response")
             }
         }

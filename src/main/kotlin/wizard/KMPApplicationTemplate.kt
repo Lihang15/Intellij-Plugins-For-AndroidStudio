@@ -13,7 +13,7 @@ import com.android.tools.idea.wizard.template.stringParameter
 import com.android.tools.idea.wizard.template.template
 import java.io.File
 
-val flutterApplicationTemplate
+val KMPApplicationTemplate
     get() = template {
         name = "KMP-OHOS Project Template"
         description = "Create a new KMP-OHOS Template Project"
@@ -64,7 +64,7 @@ val flutterApplicationTemplate
 
         // 定义项目生成逻辑
         recipe = { data ->
-            flutterApplicationRecipe(
+            KMPApplicationRecipe(
                 moduleData = data as ModuleTemplateData,
                 org = org.value,
                 useKotlin = useKotlin.value,
@@ -83,7 +83,7 @@ val flutterApplicationTemplate
         )
         
         // 使用自定义图片作为模板缩略图
-        thumb = { getImage("FlutterApplicationTemplate", "KMP") }
+        thumb = { getImage("KMPApplicationTemplate", "KMP") }
     }
 
 private fun getFlutterSdkPathFromEnv(): String {

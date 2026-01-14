@@ -9,33 +9,33 @@ import com.intellij.xdebugger.evaluation.XDebuggerEditorsProvider
 import com.intellij.xdebugger.frame.XSuspendContext
 import com.intellij.xdebugger.XDebuggerManager
 import com.google.gson.JsonArray
-import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.log
-import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.logSeparator
-import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.logCallStack
+import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.log
+import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.logSeparator
+import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.logCallStack
 
 
 /**
  * LLDB 调试进程 - 连接 IntelliJ XDebugger 和 lldb
  */
-class DapDebugProcess(
+class LLDBDebugProcess(
     session: XDebugSession,
     private val executablePath: String
 ) : XDebugProcess(session) {
     
-    private val dapSession = DapDebugSession(executablePath)
-    private val breakpointHandler = DapBreakpointHandler(this)
+    private val _Session = LLDBDebugSession(executablePath)
+    private val breakpointHandler = LLDBBreakpointHandler(this)
     
     private var currentThreadId: Int = 0
     
     init {
-        logSeparator("DapDebugProcess.init", "DapDebugProcess 构造函数")
-        logCallStack("DapDebugProcess.init")
-        log("DapDebugProcess.init", "可执行文件路径: $executablePath")
-        log("DapDebugProcess.init", "dapSession: $dapSession")
-        log("DapDebugProcess.init", "breakpointHandler: $breakpointHandler")
+        logSeparator("LLDBDebugProcess.init", "LLDBDebugProcess 构造函数")
+        logCallStack("LLDBDebugProcess.init")
+        log("LLDBDebugProcess.init", "可执行文件路径: $executablePath")
+        log("LLDBDebugProcess.init", "_Session: $_Session")
+        log("LLDBDebugProcess.init", "breakpointHandler: $breakpointHandler")
         
         // 设置事件回调
-        dapSession.onStopped = { threadId, reason ->
+        _Session.onStopped = { threadId, reason ->
             logSeparator("onStopped", "onStopped 回调触发")
             logCallStack("onStopped")
             log("onStopped", "threadId=$threadId, reason=$reason")
@@ -43,17 +43,17 @@ class DapDebugProcess(
             handleStopped(threadId, reason)
         }
         
-        dapSession.onOutput = { category, output ->
+        _Session.onOutput = { category, output ->
             log("onOutput", "category=$category, output=$output")
             session.consoleView?.print(output, com.intellij.execution.ui.ConsoleViewContentType.NORMAL_OUTPUT)
         }
         
-        dapSession.onTerminated = {
+        _Session.onTerminated = {
             log("onTerminated", "调试会话终止")
             session.stop()
         }
         
-        log("DapDebugProcess.init", "构造函数完成")
+        log("LLDBDebugProcess.init", "构造函数完成")
     }
     
     override fun sessionInitialized() {
@@ -63,7 +63,7 @@ class DapDebugProcess(
         
         // 1. 启动 lldb
         log("sessionInitialized", "步骤1: 启动 lldb 进程")
-        dapSession.start()
+        _Session.start()
         
         // 2. 等待进程启动
         log("sessionInitialized", "步骤2: 等待 200ms")
@@ -71,7 +71,7 @@ class DapDebugProcess(
         
         // 3. 发送 initialize
         log("sessionInitialized", "步骤3: 发送 initialize 请求")
-        dapSession.initialize { initResponse ->
+        _Session.initialize { initResponse ->
             log("sessionInitialized", "initialize 响应: $initResponse")
             
             // 4. 等待 initialize 完成
@@ -80,7 +80,7 @@ class DapDebugProcess(
             
             // 5. 加载目标程序
             log("sessionInitialized", "步骤5: 发送 launch 请求")
-            dapSession.launch(executablePath) { launchResponse ->
+            _Session.launch(executablePath) { launchResponse ->
                 log("sessionInitialized", "launch 响应: $launchResponse")
                 
                 // 6. 等待 launch 完成
@@ -108,7 +108,7 @@ class DapDebugProcess(
         }
         
         try {
-            dapSession.stepOver(currentThreadId) {
+            _Session.stepOver(currentThreadId) {
                 log("startStepOver", "响应: $it")
             }
         } catch (e: Exception) {
@@ -128,7 +128,7 @@ class DapDebugProcess(
         }
         
         try {
-            dapSession.stepIn(currentThreadId) {
+            _Session.stepIn(currentThreadId) {
                 log("startStepInto", "响应: $it")
             }
         } catch (e: Exception) {
@@ -148,7 +148,7 @@ class DapDebugProcess(
         }
         
         try {
-            dapSession.stepOut(currentThreadId) {
+            _Session.stepOut(currentThreadId) {
                 log("startStepOut", "响应: $it")
             }
         } catch (e: Exception) {
@@ -168,7 +168,7 @@ class DapDebugProcess(
         }
         
         try {
-            dapSession.continue_(currentThreadId) { response ->
+            _Session.continue_(currentThreadId) { response ->
                 log("resume", "响应: $response")
             }
         } catch (e: Exception) {
@@ -180,7 +180,7 @@ class DapDebugProcess(
     override fun stop() {
         logSeparator("stop", "停止调试")
         logCallStack("stop")
-        dapSession.disconnect()
+        _Session.disconnect()
         log("stop", "调试已断开")
     }
     
@@ -189,7 +189,7 @@ class DapDebugProcess(
     }
     
     override fun getEditorsProvider(): XDebuggerEditorsProvider {
-        return DapEditorsProvider()
+        return LLDBEditorsProvider()
     }
     
     /**
@@ -217,7 +217,7 @@ class DapDebugProcess(
         // 关键：必须先获取完整堆栈信息，再调用 positionReached
         log("handleStopped", "步骤1: 请求堆栈跟踪信息")
         try {
-            dapSession.stackTrace(threadId) { response ->
+            _Session.stackTrace(threadId) { response ->
                 log("handleStopped", "步骤2: stackTrace 响应长度: ${response.length}")
                 log("handleStopped", "stackTrace 响应:\n$response")
                     
@@ -241,9 +241,9 @@ class DapDebugProcess(
                     com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
                         try {
                             log("handleStopped", "步骤5: 创建 SuspendContext")
-                            val suspendContext = DapSuspendContext(
+                            val suspendContext = LLDBSuspendContext(
                                 this, 
-                                dapSession, 
+                                _Session, 
                                 threadId, 
                                 stackFrames, 
                                 session.project
@@ -411,7 +411,7 @@ class DapDebugProcess(
             
             // 5. 运行程序
             log("doSetInitialBreakpointsAndResume", "步骤3: 发送 configurationDone 请求")
-            dapSession.configurationDone { configResponse ->
+            _Session.configurationDone { configResponse ->
                 log("doSetInitialBreakpointsAndResume", "configurationDone 响应: $configResponse")
                 log("doSetInitialBreakpointsAndResume", "调试会话初始化完成!")
             }
@@ -467,7 +467,7 @@ class DapDebugProcess(
             if (lines.isNotEmpty()) {
                 val currentBreakpoints = breakpoints.filter { it.isEnabled }
                 
-                dapSession.setBreakpoints(file, lines) { response ->
+                _Session.setBreakpoints(file, lines) { response ->
                     log("syncBreakpoints", "setBreakpoints 响应: $response")
                     
                     val success = !response.contains("error:") && 
@@ -505,9 +505,9 @@ class DapDebugProcess(
     }
     
     /**
-     * 获取 DAP 会话
+     * 获取 _ 会话
      */
-    fun getDapSession(): DapDebugSession = dapSession
+    fun get_Session(): LLDBDebugSession = _Session
     
     /**
      * 获取调试会话 (IntelliJ XDebugSession)
@@ -517,5 +517,5 @@ class DapDebugProcess(
     /**
      * 获取断点处理器
      */
-    fun getBreakpointHandler(): DapBreakpointHandler = breakpointHandler
+    fun getBreakpointHandler(): LLDBBreakpointHandler = breakpointHandler
 }

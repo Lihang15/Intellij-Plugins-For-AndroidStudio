@@ -10,9 +10,9 @@ import com.intellij.openapi.ui.Messages
  * 用于测试 LLDB 调试功能的 Action
  * 当前已集成到 MyMainCppDebugRunner，此 Action 仅作为预留
  */
-class StartLldbDapAction : AnAction() {
+class StartLldbAction : AnAction() {
 
-    private val log = Logger.getInstance(StartLldbDapAction::class.java)
+    private val log = Logger.getInstance(StartLldbAction::class.java)
 
     override fun actionPerformed(e: AnActionEvent) {
         Messages.showInfoMessage(

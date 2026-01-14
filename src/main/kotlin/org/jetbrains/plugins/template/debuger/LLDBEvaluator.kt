@@ -3,26 +3,26 @@ package org.jetbrains.plugins.template.debuger
 import com.intellij.xdebugger.evaluation.XDebuggerEvaluator
 import com.intellij.xdebugger.XSourcePosition
 import com.intellij.xdebugger.frame.XValue
-import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.log
-import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.logSeparator
+import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.log
+import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.logSeparator
 import com.google.gson.JsonObject
 
 /**
- * DAP 表达式求值器
+ * _ 表达式求值器
  * 
  * 支持的功能：
  * 1. 变量名查询（如：x, sum, numbers）
  * 2. 简单表达式（如：x + 1）
  * 3. LLDB 命令（如：p x, expr x + y）
  */
-class DapEvaluator(
-    private val dapSession: DapDebugSession,
+class LLDBEvaluator(
+    private val _Session: LLDBDebugSession,
     private val threadId: Int,
     private val frameId: Int
 ) : XDebuggerEvaluator() {
     
     init {
-        log("DapEvaluator.init", "创建求值器: threadId=$threadId, frameId=$frameId")
+        log("LLDBEvaluator.init", "创建求值器: threadId=$threadId, frameId=$frameId")
     }
     
     /**
@@ -83,7 +83,7 @@ class DapEvaluator(
         
         // 发送命令到 LLDB
         try {
-            dapSession.evaluateExpression(lldbCommand) { response ->
+            _Session.evaluateExpression(lldbCommand) { response ->
                 log("evaluate", "LLDB 响应:\n$response")
                 
                 // 解析响应
@@ -140,15 +140,15 @@ class DapEvaluator(
                 
                 log("parseEvaluationResult", "解析成功: type=$varType, value=$varValue")
                 
-                // 创建 DapValue
+                // 创建 LLDBValue
                 val resultJson = JsonObject()
                 resultJson.addProperty("name", expression)
                 resultJson.addProperty("value", varValue)
                 resultJson.addProperty("type", varType)
                 resultJson.addProperty("variablesReference", 0)
                 
-                val dapValue = DapValue(dapSession, resultJson)
-                callback.evaluated(dapValue)
+                val LLDBValue = LLDBValue(_Session, resultJson)
+                callback.evaluated(LLDBValue)
                 return
             }
         }
@@ -175,8 +175,8 @@ class DapEvaluator(
             resultJson.addProperty("type", "unknown")
             resultJson.addProperty("variablesReference", 0)
             
-            val dapValue = DapValue(dapSession, resultJson)
-            callback.evaluated(dapValue)
+            val LLDBValue = LLDBValue(_Session, resultJson)
+            callback.evaluated(LLDBValue)
         } else {
             log("parseEvaluationResult", "无法解析结果", "WARN")
             callback.errorOccurred("无法解析求值结果")

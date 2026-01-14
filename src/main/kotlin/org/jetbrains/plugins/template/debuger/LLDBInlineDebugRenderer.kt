@@ -12,12 +12,12 @@ import com.intellij.ui.JBColor
 import java.awt.Font
 import java.awt.Graphics
 import java.awt.Rectangle
-import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.log
+import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.log
 
 /**
- * DAP 内联调试渲染器 - 在编辑器中显示变量值
+ * _ 内联调试渲染器 - 在编辑器中显示变量值
  */
-object DapInlineDebugRenderer {
+object LLDBInlineDebugRenderer {
     
     /**
      * 在编辑器指定行的末尾显示变量值
@@ -131,5 +131,5 @@ object DapInlineDebugRenderer {
         }
     }
     
-    private val INLINE_DEBUG_KEY = Key.create<Boolean>("DAP_INLINE_DEBUG")
+    private val INLINE_DEBUG_KEY = Key.create<Boolean>("__INLINE_DEBUG")
 }

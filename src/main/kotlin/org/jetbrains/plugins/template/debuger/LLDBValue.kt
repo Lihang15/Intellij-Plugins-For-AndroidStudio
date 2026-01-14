@@ -7,13 +7,13 @@ import com.intellij.xdebugger.frame.XValueChildrenList
 import com.intellij.xdebugger.frame.XValueNode
 import com.intellij.xdebugger.frame.XValuePlace
 import javax.swing.Icon
-import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.log
+import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.log
 
 /**
- * DAP 变量值 - 显示在 Variables 窗口
+ * _ 变量值 - 显示在 Variables 窗口
  */
-class DapValue(
-    private val dapSession: DapDebugSession,
+class LLDBValue(
+    private val _Session: LLDBDebugSession,
     private val variableJson: JsonObject
 ) : XNamedValue(variableJson.get("name")?.asString ?: "?") {
     
@@ -22,7 +22,7 @@ class DapValue(
     private val variablesReference = variableJson.get("variablesReference")?.asInt ?: 0
     
     init {
-        log("DapValue.init", "创建变量: name=${variableJson.get("name")}, value=$value, type=$type")
+        log("LLDBValue.init", "创建变量: name=${variableJson.get("name")}, value=$value, type=$type")
     }
     
     override fun computePresentation(node: XValueNode, place: XValuePlace) {

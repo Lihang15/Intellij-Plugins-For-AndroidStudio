@@ -7,9 +7,9 @@ import com.intellij.psi.PsiElement
 import com.intellij.xdebugger.evaluation.XDebuggerEditorsProvider
 
 /**
- * DAP 编辑器提供者（用于表达式求值等）
+ * _ 编辑器提供者（用于表达式求值等）
  */
-class DapEditorsProvider : XDebuggerEditorsProvider() {
+class LLDBEditorsProvider : XDebuggerEditorsProvider() {
     
     override fun getFileType(): FileType {
         return com.intellij.openapi.fileTypes.PlainTextFileType.INSTANCE
