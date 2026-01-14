@@ -1,4 +1,4 @@
-package tim.psi
+package lsp.tim.psi
 
 import com.intellij.extapi.psi.ASTWrapperPsiElement
 import com.intellij.lang.ASTNode

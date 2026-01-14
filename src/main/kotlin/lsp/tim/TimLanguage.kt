@@ -1,4 +1,4 @@
-package tim
+package lsp.tim
 
 import com.intellij.lang.Language
 

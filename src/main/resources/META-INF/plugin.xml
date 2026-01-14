@@ -12,11 +12,12 @@
     <depends>org.jetbrains.android</depends>
     <depends>com.intellij.modules.androidstudio</depends>
     
+          <!-- 测试java/kotlin代码是否正常 -->
     <actions>
         <action
                 id="LldbDapDemoAction"
                 class="org.jetbrains.plugins.template.debuger.StartLldbDapAction"
-                text="Start LLDB-DAP Demo"
+                text="test kotlin Start LLDB Demo"
                 description="Start lldb-dap and send initialize">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
@@ -30,7 +31,6 @@
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="org.jetbrains.plugins.template.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
         <postStartupActivity implementation="org.jetbrains.plugins.template.startup.MyProjectActivity" />
         
           <!-- MyMainCpp 运行配置 -->
@@ -38,15 +38,16 @@
         <runConfigurationProducer implementation="org.jetbrains.plugins.template.cpp.MyMainCppRunConfigurationProducer"/>
         <programRunner implementation="org.jetbrains.plugins.template.cpp.MyMainCppDebugRunner"/>
         
-        <!-- KMP-OHOS 项目生成器 (IntelliJ Platform API) -->
-        <directoryProjectGenerator implementation="wizard.KmpOhosProjectGenerator"/>
     </extensions>
 
 
+  <!-- 创建 项目模版 -->
     <extensions defaultExtensionNs="com.android.tools.idea.wizard.template">
-
         <wizardTemplateProvider
                 implementation="wizard.FlutterWizardTemplateProvider"/>
+
+                 <!-- KMP-OHOS 项目生成器 (IntelliJ Platform API) -->
+        <directoryProjectGenerator implementation="wizard.KmpOhosProjectGenerator"/>
     </extensions>
 
 
@@ -58,24 +59,30 @@
         <fileType
                 name="Tim"
                 language="Tim"
-                implementationClass="tim.TimFileType"
+                implementationClass="lsp.tim.TimFileType"
                 extensions="tim"/>
         <language
                 id="Tim"
-                implementationClass="tim.TimLanguage"/>
+                implementationClass="lsp.tim.TimLanguage"/>
 
         <!-- Tim Parser Definition - Required for PSI and ExternalAnnotator -->
         <lang.parserDefinition
                 language="Tim"
-                implementationClass="tim.psi.TimParserDefinition"/>
+                implementationClass="lsp.tim.psi.TimParserDefinition"/>
 
         <!-- Tim Syntax Highlighter - For basic syntax highlighting -->
         <lang.syntaxHighlighterFactory
                 language="Tim"
-                implementationClass="tim.TimSyntaxHighlighterFactory"/>
+                implementationClass="lsp.tim.TimSyntaxHighlighterFactory"/>
 
         <!-- Tim Startup Activity to Initialize LSP Server -->
-        <postStartupActivity implementation="tim.TimStartupActivity"/>
+        <postStartupActivity implementation="lsp.tim.TimStartupActivity"/>
+
+          <!-- Tim Diagnostic Monitor - For debugging LSP diagnostics -->
+        <externalAnnotator id="TimDiagnosticMonitor"
+                           language="Tim"
+                           implementationClass="lsp.tim.TimDiagnosticMonitor"
+                           order="last"/>
 
         <!-- LSP4IntelliJ Core Services -->
         <applicationService serviceImplementation="org.wso2.lsp4intellij.IntellijLanguageClient"/>
@@ -105,11 +112,7 @@
                            language="Tim"
                            implementationClass="org.wso2.lsp4intellij.contributors.annotator.LSPAnnotator"/>
 
-        <!-- Tim Diagnostic Monitor - For debugging LSP diagnostics -->
-        <externalAnnotator id="TimDiagnosticMonitor"
-                           language="Tim"
-                           implementationClass="tim.TimDiagnosticMonitor"
-                           order="last"/>
+      
 
         <!-- LSP Workspace Symbols -->
         <gotoSymbolContributor implementation="org.wso2.lsp4intellij.contributors.symbol.LSPSymbolContributor"

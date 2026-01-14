@@ -1,4 +1,4 @@
-package tim.psi
+package lsp.tim.psi
 
 import com.intellij.lang.ASTNode
 import com.intellij.lang.ParserDefinition
@@ -10,9 +10,9 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.tree.IFileElementType
 import com.intellij.psi.tree.TokenSet
-import tim.TimLanguage
-import tim.TimLexer
-import tim.TimTokenTypes
+import lsp.tim.TimLanguage
+import lsp.tim.TimLexer
+import lsp.tim.TimTokenTypes
 
 /**
  * Tim 语言的 ParserDefinition

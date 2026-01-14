@@ -1,4 +1,4 @@
-package tim
+package lsp.tim
 
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.lang.annotation.AnnotationHolder
@@ -7,7 +7,7 @@ import com.intellij.lang.annotation.HighlightSeverity
 import com.intellij.openapi.editor.Editor
 import com.intellij.psi.PsiFile
 import org.wso2.lsp4intellij.IntellijLanguageClient
-import tim.psi.TimPsiFile
+import lsp.tim.psi.TimPsiFile
 
 /**
  * Tim 语言的诊断信息监控器

@@ -14,7 +14,7 @@ public class TestAction extends AnAction {
 
         Messages.showInfoMessage(
                 "hello",
-                "DAP Client"
+                "我可以写java"
         );
     }
 }

@@ -1,10 +1,10 @@
-package tim.psi
+package lsp.tim.psi
 
 import com.intellij.extapi.psi.PsiFileBase
 import com.intellij.openapi.fileTypes.FileType
 import com.intellij.psi.FileViewProvider
-import tim.TimFileType
-import tim.TimLanguage
+import lsp.tim.TimFileType
+import lsp.tim.TimLanguage
 
 /**
  * Tim 语言的 PsiFile 实现

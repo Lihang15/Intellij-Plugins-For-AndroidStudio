@@ -1,4 +1,4 @@
-package tim
+package lsp.tim
 
 import com.intellij.openapi.fileTypes.SyntaxHighlighter
 import com.intellij.openapi.fileTypes.SyntaxHighlighterFactory
