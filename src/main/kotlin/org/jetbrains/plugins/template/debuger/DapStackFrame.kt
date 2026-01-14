@@ -11,6 +11,7 @@ import com.intellij.xdebugger.XSourcePosition
 import com.intellij.xdebugger.frame.XCompositeNode
 import com.intellij.xdebugger.frame.XStackFrame
 import com.intellij.xdebugger.frame.XValueChildrenList
+import com.intellij.xdebugger.evaluation.XDebuggerEvaluator
 import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.log
 import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.logSeparator
 
@@ -20,7 +21,8 @@ import org.jetbrains.plugins.template.debuger.DapDebugSession.Companion.logSepar
 class DapStackFrame(
     private val dapSession: DapDebugSession,
     private val frameJson: JsonObject,
-    private val project: com.intellij.openapi.project.Project
+    private val project: com.intellij.openapi.project.Project,
+    private val threadId: Int = 1
 ) : XStackFrame() {
     
     private val frameId = frameJson.get("id")?.asInt ?: 0
@@ -30,6 +32,9 @@ class DapStackFrame(
     
     private val sourcePath = frameJson.getAsJsonObject("source")
         ?.get("path")?.asString
+    
+    // 创建表达式求值器
+    private val evaluator = DapEvaluator(dapSession, threadId, frameId)
     
     init {
         log("DapStackFrame.init", "创建栈帧: frameId=$frameId, name=$name, line=$line, sourcePath=$sourcePath")
@@ -97,6 +102,15 @@ class DapStackFrame(
             val fileName = sourcePath.substringAfterLast('/')
             component.append(" ($fileName:$line)", SimpleTextAttributes.GRAY_ATTRIBUTES)
         }
+    }
+    
+    /**
+     * 获取表达式求值器
+     * 返回 DapEvaluator 实例，支持在调试窗口中计算表达式
+     */
+    override fun getEvaluator(): XDebuggerEvaluator? {
+        log("getEvaluator", "返回求值器: frameId=$frameId, threadId=$threadId")
+        return evaluator
     }
     
     override fun computeChildren(node: XCompositeNode) {

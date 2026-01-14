@@ -28,7 +28,7 @@ class DapExecutionStack(
         
         val topFrame = stackFrames[0].asJsonObject
         log("getTopFrame", "返回顶层栈帧: $topFrame")
-        return DapStackFrame(dapSession, topFrame, project)
+        return DapStackFrame(dapSession, topFrame, project, threadId)
     }
     
     override fun computeStackFrames(firstFrameIndex: Int, container: XStackFrameContainer?) {
@@ -38,7 +38,7 @@ class DapExecutionStack(
         for (i in firstFrameIndex until stackFrames.size()) {
             val frameJson = stackFrames[i].asJsonObject
             log("computeStackFrames", "添加栈帧#$i: $frameJson")
-            frames.add(DapStackFrame(dapSession, frameJson, project))
+            frames.add(DapStackFrame(dapSession, frameJson, project, threadId))
         }
         
         log("computeStackFrames", "共添加 ${frames.size} 个栈帧")

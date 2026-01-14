@@ -406,12 +406,14 @@ class DapDebugSession(private val executablePath: String) {
     
     /**
      * 获取作用域/变量
+     * 关键修复：必须先选择正确的 frame，再查询变量
      */
     fun scopes(frameId: Int, callback: (String) -> Unit) {
         logSeparator("scopes", "获取作用域")
         logCallStack("scopes")
         log("scopes", "frameId=$frameId")
-        sendCommand("frame variable") { response ->
+        // 先选择正确的 frame，再查询变量
+        sendCommand("frame select $frameId\nframe variable") { response ->
             log("scopes", "变量响应:\n$response")
             callback.invoke(response)
         }
@@ -426,6 +428,19 @@ class DapDebugSession(private val executablePath: String) {
         log("variables", "variablesReference=$variablesReference")
         sendCommand("frame variable") { response ->
             log("variables", "变量响应:\n$response")
+            callback.invoke(response)
+        }
+    }
+    
+    /**
+     * 求值表达式
+     */
+    fun evaluateExpression(expression: String, callback: (String) -> Unit) {
+        logSeparator("evaluateExpression", "求值表达式")
+        logCallStack("evaluateExpression")
+        log("evaluateExpression", "表达式: $expression")
+        sendCommand(expression) { response ->
+            log("evaluateExpression", "求值响应:\n$response")
             callback.invoke(response)
         }
     }
