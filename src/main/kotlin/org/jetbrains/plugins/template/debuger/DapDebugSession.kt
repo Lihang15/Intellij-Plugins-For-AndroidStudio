@@ -553,18 +553,25 @@ class DapDebugSession(private val executablePath: String) {
     /**
      * 检查停止事件
      * 
+     * LLDB 输出格式（两行）：
+     * 1. "Process 91141 stopped"
+     * 2. "* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 2.1"
+     * 
      * 关键修复：
      * 1. 停止事件必须 **立即异步触发**，不能等待命令回调
      * 2. 使用独立线程推送，避免阻塞 LLDB 输出解析
+     * 3. 必须按照两行顺序检测，确保不会重复触发
      */
     private fun checkStopEvents(line: String) {
         when {
+            // 第一步：检测到 "Process stopped"
             line.contains("Process") && line.contains("stopped") -> {
-                log("checkStopEvents", ">>> 检测到 Process stopped")
+                log("checkStopEvents", ">>> 检测到 Process stopped，等待线程信息...")
                 lastStopDetected = true
             }
+            // 第二步：在 lastStopDetected 之后检测到线程信息
             lastStopDetected && line.startsWith("*") && line.contains("thread #") -> {
-                log("checkStopEvents", ">>> 检测到完整的停止事件 <<<")
+                log("checkStopEvents", ">>> 检测到线程信息，触发停止事件 <<<")
                 lastStopDetected = false
                 
                 val threadId = extractThreadId(line)
@@ -583,19 +590,25 @@ class DapDebugSession(private val executablePath: String) {
                     }
                 }.start()
             }
+            // 退出事件
             line.contains("Process") && line.contains("exited") -> {
                 log("checkStopEvents", ">>> 检测到退出事件 <<<")
+                lastStopDetected = false
                 Thread {
                     onTerminated?.invoke()
                 }.start()
             }
+            // 恢复运行
             line.contains("Process") && line.contains("resuming") -> {
                 log("checkStopEvents", "程序恢复运行")
+                lastStopDetected = false
             }
+            // 断点设置确认
             line.contains("Breakpoint") && line.contains("where =") -> {
                 log("checkStopEvents", "断点设置确认: $line")
                 onOutput?.invoke("console", line)
             }
+            // 其他输出
             else -> {
                 if (!line.startsWith("(lldb)")) {
                     onOutput?.invoke("console", line)
