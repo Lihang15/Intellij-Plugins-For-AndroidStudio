@@ -1,45 +1,41 @@
 package org.jetbrains.plugins.template.debuger
 
-import com.google.gson.JsonObject
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.xdebugger.frame.XCompositeNode
 import com.intellij.xdebugger.frame.XNamedValue
 import com.intellij.xdebugger.frame.XValueChildrenList
 import com.intellij.xdebugger.frame.XValueNode
 import com.intellij.xdebugger.frame.XValuePlace
-import javax.swing.Icon
-import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.log
 
 /**
- * _ 变量值 - 显示在 Variables 窗口
+ * LLDB 变量值 - 重构版
+ * 参考 Flutter 的 DartVmServiceValue 设计
+ * 
+ * 关键改进：
+ * 1. 使用预解析的 Variable 对象
+ * 2. 移除对 LLDBDebugSession 的依赖
  */
 class LLDBValue(
-    private val _Session: LLDBDebugSession,
-    private val variableJson: JsonObject
-) : XNamedValue(variableJson.get("name")?.asString ?: "?") {
+    private val process: LLDBDebugProcess,
+    private val variable: Variable
+) : XNamedValue(variable.name) {
     
-    private val value = variableJson.get("value")?.asString ?: ""
-    private val type = variableJson.get("type")?.asString
-    private val variablesReference = variableJson.get("variablesReference")?.asInt ?: 0
+    companion object {
+        private val LOG = Logger.getInstance(LLDBValue::class.java)
+    }
     
     init {
-        log("LLDBValue.init", "创建变量: name=${variableJson.get("name")}, value=$value, type=$type")
+        LOG.info("创建变量: name=${variable.name}, value=${variable.value}, type=${variable.type}")
     }
     
     override fun computePresentation(node: XValueNode, place: XValuePlace) {
-        val typeText = if (type != null) "($type) " else ""
-        log("computePresentation", "显示: $typeText$value, hasChildren=${variablesReference > 0}")
-        node.setPresentation(null, typeText, value, variablesReference > 0)
+        val typeText = if (variable.type.isNotEmpty()) "(${variable.type}) " else ""
+        LOG.info("显示: $typeText${variable.value}")
+        node.setPresentation(null, typeText, variable.value, false)
     }
     
     override fun computeChildren(node: XCompositeNode) {
-        log("computeChildren", "variablesReference=$variablesReference")
-        if (variablesReference <= 0) {
-            log("computeChildren", "无子元素")
-            node.addChildren(XValueChildrenList.EMPTY, true)
-            return
-        }
-        
-        log("computeChildren", "复杂类型子变量暂不支持")
+        LOG.info("复杂类型子变量暂不支持")
         node.addChildren(XValueChildrenList.EMPTY, true)
     }
 }

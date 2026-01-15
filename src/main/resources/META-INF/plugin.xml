@@ -38,6 +38,9 @@
         <runConfigurationProducer implementation="org.jetbrains.plugins.template.cpp.MyMainCppRunConfigurationProducer"/>
         <programRunner implementation="org.jetbrains.plugins.template.cpp.MyMainCppDebugRunner"/>
         
+        <!-- LLDB 断点类型 -->
+        <xdebugger.breakpointType implementation="org.jetbrains.plugins.template.debuger.LLDBLineBreakpointType"/>
+        
     </extensions>
 
 

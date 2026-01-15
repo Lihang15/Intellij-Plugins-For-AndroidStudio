@@ -1,14 +1,17 @@
 package org.jetbrains.plugins.template.debuger
 
-import com.intellij.xdebugger.evaluation.XDebuggerEvaluator
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.xdebugger.XSourcePosition
-import com.intellij.xdebugger.frame.XValue
-import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.log
-import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.logSeparator
-import com.google.gson.JsonObject
+import com.intellij.xdebugger.evaluation.XDebuggerEvaluator
 
 /**
- * _ 表达式求值器
+ * LLDB 表达式求值器 - 重构版
+ * 参考 Flutter 的 DartVmServiceEvaluator 设计
+ * 
+ * 关键改进：
+ * 1. 使用 LLDBServiceWrapper 发送命令
+ * 2. 移除对 LLDBDebugSession 的依赖
+ * 3. 简化表达式解析逻辑
  * 
  * 支持的功能：
  * 1. 变量名查询（如：x, sum, numbers）
@@ -16,13 +19,17 @@ import com.google.gson.JsonObject
  * 3. LLDB 命令（如：p x, expr x + y）
  */
 class LLDBEvaluator(
-    private val _Session: LLDBDebugSession,
+    private val process: LLDBDebugProcess,
     private val threadId: Int,
-    private val frameId: Int
+    private val frameIndex: Int
 ) : XDebuggerEvaluator() {
     
+    companion object {
+        private val LOG = Logger.getInstance(LLDBEvaluator::class.java)
+    }
+    
     init {
-        log("LLDBEvaluator.init", "创建求值器: threadId=$threadId, frameId=$frameId")
+        LOG.info("创建求值器: threadId=$threadId, frameIndex=$frameIndex")
     }
     
     /**
@@ -37,12 +44,18 @@ class LLDBEvaluator(
         callback: XEvaluationCallback,
         expressionPosition: XSourcePosition?
     ) {
-        logSeparator("evaluate", "表达式求值")
-        log("evaluate", "表达式: \"$expression\"")
-        log("evaluate", "threadId=$threadId, frameId=$frameId")
+        println("\n========== [LLDBEvaluator.evaluate] 开始 ==========")
+        LOG.info("=== 表达式求值 ===")
+        LOG.info("表达式: \"$expression\"")
+        LOG.info("threadId=$threadId, frameIndex=$frameIndex")
+        
+        println("[LLDBEvaluator] 表达式: \"$expression\"")
+        println("[LLDBEvaluator] threadId=$threadId, frameIndex=$frameIndex")
         
         if (expression.isBlank()) {
-            log("evaluate", "表达式为空", "WARN")
+            LOG.warn("表达式为空")
+            println("[LLDBEvaluator] ✗ 表达式为空")
+            println("========== [LLDBEvaluator.evaluate] 结束 ==========\n")
             callback.errorOccurred("表达式不能为空")
             return
         }
@@ -51,47 +64,54 @@ class LLDBEvaluator(
         val cleanExpression = expression.trim()
         
         // 构建 LLDB 表达式命令
-        // 关键修复：必须先选择正确的 frame，再执行表达式
-        // 支持三种格式：
-        // 1. 直接变量名: x → frame select frameId; frame variable x
-        // 2. 表达式: x + 1 → frame select frameId; expr x + 1
-        // 3. 已包含命令: p x → frame select frameId; p x
+        // 关键修复：不使用多行命令，直接用 expr 在当前帧执行
         val lldbCommand = when {
             cleanExpression.startsWith("p ") || 
-            cleanExpression.startsWith("print ") ||
+            cleanExpression.startsWith("print ") -> {
+                LOG.info("检测到 print 命令格式")
+                println("[LLDBEvaluator] 检测到 print 命令格式")
+                cleanExpression
+            }
             cleanExpression.startsWith("expr ") ||
             cleanExpression.startsWith("expression ") -> {
-                log("evaluate", "检测到 LLDB 命令格式")
-                // 先选择正确的 frame
-                "frame select $frameId\n$cleanExpression"
+                LOG.info("检测到 expr 命令格式")
+                println("[LLDBEvaluator] 检测到 expr 命令格式")
+                cleanExpression
             }
-            // 简单变量名（只包含字母、数字、下划线）
             cleanExpression.matches(Regex("^[a-zA-Z_][a-zA-Z0-9_]*$")) -> {
-                log("evaluate", "检测到简单变量名")
-                // 先选择正确的 frame，再查询变量
-                "frame select $frameId\nframe variable $cleanExpression"
+                LOG.info("检测到简单变量名")
+                println("[LLDBEvaluator] 检测到简单变量名")
+                "frame variable $cleanExpression"
             }
-            // 其他情况当作表达式处理
             else -> {
-                log("evaluate", "检测到表达式")
-                // 先选择正确的 frame，再求值表达式
-                "frame select $frameId\nexpr $cleanExpression"
+                LOG.info("检测到表达式")
+                println("[LLDBEvaluator] 检测到表达式")
+                "expr $cleanExpression"
             }
         }
         
-        log("evaluate", "LLDB 命令: $lldbCommand")
+        LOG.info("LLDB 命令: $lldbCommand")
+        println("[LLDBEvaluator] LLDB 命令:")
+        println("--- 开始 ---")
+        println(lldbCommand)
+        println("--- 结束 ---")
         
         // 发送命令到 LLDB
         try {
-            _Session.evaluateExpression(lldbCommand) { response ->
-                log("evaluate", "LLDB 响应:\n$response")
+            val serviceWrapper = process.getServiceWrapper()
+            serviceWrapper.evaluateExpression(lldbCommand) { response ->
+                LOG.info("LLDB 响应:\n$response")
+                println("[LLDBEvaluator] 收到 LLDB 响应")
                 
                 // 解析响应
                 parseEvaluationResult(cleanExpression, response, callback)
+                println("========== [LLDBEvaluator.evaluate] 结束 ==========\n")
             }
         } catch (e: Exception) {
-            log("evaluate", "求值异常: ${e.message}", "ERROR")
+            LOG.error("求值异常: ${e.message}", e)
+            println("[LLDBEvaluator] ✗ 求值异常: ${e.message}")
             e.printStackTrace()
+            println("========== [LLDBEvaluator.evaluate] 结束 ==========\n")
             callback.errorOccurred("求值失败: ${e.message}")
         }
     }
@@ -104,24 +124,54 @@ class LLDBEvaluator(
         output: String,
         callback: XEvaluationCallback
     ) {
-        log("parseEvaluationResult", "=== 解析求值结果 ===")
-        log("parseEvaluationResult", "表达式: $expression")
-        log("parseEvaluationResult", "输出:\n$output")
+        println("\n========== [LLDBEvaluator.parseEvaluationResult] 开始 ==========")
+        LOG.info("=== 解析求值结果 ===")
+        LOG.info("表达式: $expression")
+        LOG.info("输出:\n$output")
+        
+        println("[parseEvaluationResult] 表达式: $expression")
+        println("[parseEvaluationResult] 输出:")
+        println("--- 开始 ---")
+        println(output)
+        println("--- 结束 ---")
         
         // 检查是否有错误
-        if (output.contains("error:") || output.contains("no variable")) {
+        if (output.contains("error:") && !output.contains("error: Invalid value for end of vector")) {
             val errorMsg = extractErrorMessage(output)
-            log("parseEvaluationResult", "求值失败: $errorMsg", "ERROR")
+            LOG.error("求值失败: $errorMsg")
+            println("[parseEvaluationResult] ✗ 求值失败: $errorMsg")
+            println("========== [LLDBEvaluator.parseEvaluationResult] 结束 ==========\n")
             callback.errorOccurred(errorMsg)
             return
+        }
+        
+        // 关键修复：只解析我们发送的命令之后的输出
+        // 找到命令回显的位置，从那之后开始解析
+        val lines = output.split("\n")
+        var startParsingIndex = 0
+        
+        // 查找命令回显（例如：(lldb) expr x+y 或 (lldb) frame variable x）
+        for ((index, line) in lines.withIndex()) {
+            val trimmed = line.trim()
+            if (trimmed.startsWith("(lldb) expr ") || 
+                trimmed.startsWith("(lldb) frame variable ") ||
+                trimmed.startsWith("(lldb) p ") ||
+                trimmed.startsWith("(lldb) print ")) {
+                startParsingIndex = index + 1  // 从命令回显的下一行开始解析
+                println("[parseEvaluationResult] 找到命令回显在行 #$index: $trimmed")
+                println("[parseEvaluationResult] 从行 #$startParsingIndex 开始解析")
+                break
+            }
         }
         
         // 解析变量格式: (type) name = value
         // 或表达式格式: (type) $0 = value
         val varPattern = """^\(([^)]+)\)\s+(?:\$\d+|[\w]+)\s*=\s*(.+)$""".toRegex()
         
-        for (line in output.split("\n")) {
-            val trimmed = line.trim()
+        println("[parseEvaluationResult] 尝试匹配模式: (type) name = value")
+        
+        for (lineIndex in startParsingIndex until lines.size) {
+            val trimmed = lines[lineIndex].trim()
             
             // 跳过空行和提示符
             if (trimmed.isEmpty() || 
@@ -129,32 +179,39 @@ class LLDBEvaluator(
                 trimmed.startsWith("Process") ||
                 trimmed.startsWith("thread #") ||
                 trimmed.startsWith("*") ||
-                trimmed.startsWith("frame #")) {
+                trimmed.startsWith("frame #") ||
+                trimmed.matches(Regex("^\\d+\\s+.*"))) {  // 跳过源代码行（以数字开头）
                 continue
             }
+            
+            println("[parseEvaluationResult] 检查行 #$lineIndex: $trimmed")
             
             val match = varPattern.find(trimmed)
             if (match != null) {
                 val varType = match.groupValues[1]
                 val varValue = match.groupValues[2]
                 
-                log("parseEvaluationResult", "解析成功: type=$varType, value=$varValue")
+                LOG.info("解析成功: type=$varType, value=$varValue")
+                println("[parseEvaluationResult] ✓ 解析成功:")
+                println("  类型: $varType")
+                println("  值: $varValue")
                 
                 // 创建 LLDBValue
-                val resultJson = JsonObject()
-                resultJson.addProperty("name", expression)
-                resultJson.addProperty("value", varValue)
-                resultJson.addProperty("type", varType)
-                resultJson.addProperty("variablesReference", 0)
-                
-                val LLDBValue = LLDBValue(_Session, resultJson)
-                callback.evaluated(LLDBValue)
+                val variable = Variable(expression, varValue, varType)
+                val lldbValue = LLDBValue(process, variable)
+                println("========== [LLDBEvaluator.parseEvaluationResult] 结束 ==========\n")
+                callback.evaluated(lldbValue)
                 return
+            } else {
+                println("[parseEvaluationResult]   未匹配")
             }
         }
         
         // 如果没有匹配到标准格式，尝试提取任何看起来像结果的内容
-        val cleanOutput = output.lines()
+        println("[parseEvaluationResult] 标准格式未匹配，尝试简化格式")
+        
+        val cleanOutput = lines
+            .drop(startParsingIndex)  // 从命令回显之后开始
             .filter { line -> 
                 val t = line.trim()
                 t.isNotEmpty() && 
@@ -162,23 +219,24 @@ class LLDBEvaluator(
                 !t.startsWith("Process") &&
                 !t.startsWith("thread #") &&
                 !t.startsWith("*") &&
-                !t.startsWith("frame #")
+                !t.startsWith("frame #") &&
+                !t.matches(Regex("^\\d+\\s+.*"))  // 跳过源代码行
             }
             .joinToString("\n")
         
         if (cleanOutput.isNotEmpty()) {
-            log("parseEvaluationResult", "使用简化格式返回结果")
+            LOG.info("使用简化格式返回结果")
+            println("[parseEvaluationResult] ✓ 使用简化格式:")
+            println("  内容: $cleanOutput")
             
-            val resultJson = JsonObject()
-            resultJson.addProperty("name", expression)
-            resultJson.addProperty("value", cleanOutput)
-            resultJson.addProperty("type", "unknown")
-            resultJson.addProperty("variablesReference", 0)
-            
-            val LLDBValue = LLDBValue(_Session, resultJson)
-            callback.evaluated(LLDBValue)
+            val variable = Variable(expression, cleanOutput, "unknown")
+            val lldbValue = LLDBValue(process, variable)
+            println("========== [LLDBEvaluator.parseEvaluationResult] 结束 ==========\n")
+            callback.evaluated(lldbValue)
         } else {
-            log("parseEvaluationResult", "无法解析结果", "WARN")
+            LOG.warn("无法解析结果")
+            println("[parseEvaluationResult] ✗ 无法解析结果")
+            println("========== [LLDBEvaluator.parseEvaluationResult] 结束 ==========\n")
             callback.errorOccurred("无法解析求值结果")
         }
     }

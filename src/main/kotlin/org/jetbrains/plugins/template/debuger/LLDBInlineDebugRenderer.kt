@@ -1,5 +1,6 @@
 package org.jetbrains.plugins.template.debuger
 
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.EditorCustomElementRenderer
 import com.intellij.openapi.editor.Inlay
@@ -12,12 +13,13 @@ import com.intellij.ui.JBColor
 import java.awt.Font
 import java.awt.Graphics
 import java.awt.Rectangle
-import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.log
 
 /**
- * _ 内联调试渲染器 - 在编辑器中显示变量值
+ * LLDB 内联调试渲染器 - 在编辑器中显示变量值
  */
 object LLDBInlineDebugRenderer {
+    
+    private val LOG = Logger.getInstance(LLDBInlineDebugRenderer::class.java)
     
     /**
      * 在编辑器指定行的末尾显示变量值
@@ -28,18 +30,18 @@ object LLDBInlineDebugRenderer {
         variableName: String,
         variableValue: String
     ) {
-        log("showVariableValue", "=== 显示内联变量 ===")
-        log("showVariableValue", "line=$line, $variableName = $variableValue")
+        LOG.info("=== 显示内联变量 ===")
+        LOG.info("line=$line, $variableName = $variableValue")
         
         try {
             val document = editor.document
             if (line < 0 || line >= document.lineCount) {
-                log("showVariableValue", "行号超出范围: line=$line, lineCount=${document.lineCount}", "WARN")
+                LOG.warn("行号超出范围: line=$line, lineCount=${document.lineCount}")
                 return
             }
             
             val lineEndOffset = document.getLineEndOffset(line)
-            log("showVariableValue", "lineEndOffset=$lineEndOffset")
+            LOG.info("lineEndOffset=$lineEndOffset")
             
             // 创建文本属性（灰色、斜体）
             val textAttributes = TextAttributes().apply {
@@ -86,13 +88,12 @@ object LLDBInlineDebugRenderer {
                 }
             )
             
-            log("showVariableValue", "内联提示已添加: $inlayText")
+            LOG.info("内联提示已添加: $inlayText")
             
             rangeHighlighter.putUserData(INLINE_DEBUG_KEY, true)
             
         } catch (e: Exception) {
-            log("showVariableValue", "添加内联提示失败: ${e.message}", "ERROR")
-            e.printStackTrace()
+            LOG.error("添加内联提示失败: ${e.message}", e)
         }
     }
     
@@ -100,7 +101,7 @@ object LLDBInlineDebugRenderer {
      * 清除编辑器中的所有内联调试提示
      */
     fun clearAllInlineHints(editor: Editor) {
-        log("clearAllInlineHints", "=== 清除所有内联提示 ===")
+        LOG.info("=== 清除所有内联提示 ===")
         
         try {
             val markupModel = editor.markupModel
@@ -123,11 +124,10 @@ object LLDBInlineDebugRenderer {
                 disposedCount++
             }
             
-            log("clearAllInlineHints", "已清除 $removedCount 个 highlighters, $disposedCount 个 inlays")
+            LOG.info("已清除 $removedCount 个 highlighters, $disposedCount 个 inlays")
             
         } catch (e: Exception) {
-            log("clearAllInlineHints", "清除失败: ${e.message}", "ERROR")
-            e.printStackTrace()
+            LOG.error("清除失败: ${e.message}", e)
         }
     }
     

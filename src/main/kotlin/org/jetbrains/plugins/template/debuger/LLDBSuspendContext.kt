@@ -1,39 +1,46 @@
 package org.jetbrains.plugins.template.debuger
 
-import com.google.gson.JsonArray
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.xdebugger.frame.XExecutionStack
 import com.intellij.xdebugger.frame.XSuspendContext
-import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.log
 
 /**
- * _ 暂停上下文
+ * LLDB 暂停上下文 - 重构版
+ * 参考 Flutter 的 DartVmServiceSuspendContext 设计
+ * 
+ * 关键改进：
+ * 1. 使用预解析的栈帧列表（不再依赖 JsonArray）
+ * 2. 移除对 LLDBDebugSession 的依赖
+ * 3. 简化构造函数
  */
 class LLDBSuspendContext(
     private val process: LLDBDebugProcess,
-    private val _Session: LLDBDebugSession,
     private val threadId: Int,
-    private val stackFrames: JsonArray,
-    private val project: com.intellij.openapi.project.Project
+    private val stackFrames: List<StackFrame>
 ) : XSuspendContext() {
     
-    private val executionStack = LLDBExecutionStack(_Session, threadId, stackFrames, project)
+    companion object {
+        private val LOG = Logger.getInstance(LLDBSuspendContext::class.java)
+    }
+    
+    private val executionStack = LLDBExecutionStack(process, threadId, stackFrames)
     
     init {
-        log("LLDBSuspendContext.init", "=== 创建暂停上下文 ===")
-        log("LLDBSuspendContext.init", "threadId=$threadId")
-        log("LLDBSuspendContext.init", "stackFrames 数量=${stackFrames.size()}")
-        for (i in 0 until stackFrames.size()) {
-            log("LLDBSuspendContext.init", "  栈帧#$i: ${stackFrames[i]}")
+        LOG.info("=== 创建暂停上下文 ===")
+        LOG.info("threadId=$threadId")
+        LOG.info("stackFrames 数量=${stackFrames.size}")
+        for ((index, frame) in stackFrames.withIndex()) {
+            LOG.info("  栈帧#$index: ${frame.name} at ${frame.file}:${frame.line}")
         }
     }
     
-    override fun getActiveExecutionStack(): XExecutionStack? {
-        log("getActiveExecutionStack", "返回 executionStack, threadId=$threadId")
+    override fun getActiveExecutionStack(): XExecutionStack {
+        LOG.info("返回 executionStack, threadId=$threadId")
         return executionStack
     }
     
     override fun getExecutionStacks(): Array<XExecutionStack> {
-        log("getExecutionStacks", "返回 1 个 executionStack")
+        LOG.info("返回 1 个 executionStack")
         return arrayOf(executionStack)
     }
 }

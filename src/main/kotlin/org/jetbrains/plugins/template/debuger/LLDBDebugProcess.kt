@@ -1,190 +1,273 @@
 package org.jetbrains.plugins.template.debuger
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.xdebugger.XDebugProcess
 import com.intellij.xdebugger.XDebugSession
-import com.intellij.xdebugger.XSourcePosition
 import com.intellij.xdebugger.breakpoints.XBreakpointHandler
-import com.intellij.xdebugger.breakpoints.XLineBreakpoint
 import com.intellij.xdebugger.evaluation.XDebuggerEditorsProvider
 import com.intellij.xdebugger.frame.XSuspendContext
-import com.intellij.xdebugger.XDebuggerManager
-import com.google.gson.JsonArray
-import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.log
-import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.logSeparator
-import org.jetbrains.plugins.template.debuger.LLDBDebugSession.Companion.logCallStack
-
+import java.util.concurrent.ConcurrentHashMap
 
 /**
- * LLDB 调试进程 - 连接 IntelliJ XDebugger 和 lldb
+ * LLDB 调试进程 - 重构版
+ * 参考 Flutter 的 DartVmServiceDebugProcess 设计
+ * 
+ * 关键改进：
+ * 1. 使用 LLDBServiceWrapper 集中管理 LLDB 通信
+ * 2. 使用 LLDBListener 处理所有事件
+ * 3. 移除所有 Thread.sleep() 调用
+ * 4. 明确的状态跟踪
+ * 5. EDT 线程安全
  */
 class LLDBDebugProcess(
     session: XDebugSession,
     private val executablePath: String
 ) : XDebugProcess(session) {
     
-    private val _Session = LLDBDebugSession(executablePath)
-    private val breakpointHandler = LLDBBreakpointHandler(this)
+    companion object {
+        private val LOG = Logger.getInstance(LLDBDebugProcess::class.java)
+    }
     
-    private var currentThreadId: Int = 0
+    // 核心组件
+    private val serviceWrapper = LLDBServiceWrapper(this)
+    private val listener = LLDBListener(this, serviceWrapper)
+    private val breakpointHandler = LLDBBreakpointHandler(this)
+    private val positionMapper = LLDBPositionMapper(session.project)
+    
+    // 暂停的线程（threadId -> future）
+    private val suspendedThreads = ConcurrentHashMap<Int, Boolean>()
     
     init {
-        logSeparator("LLDBDebugProcess.init", "LLDBDebugProcess 构造函数")
-        logCallStack("LLDBDebugProcess.init")
-        log("LLDBDebugProcess.init", "可执行文件路径: $executablePath")
-        log("LLDBDebugProcess.init", "_Session: $_Session")
-        log("LLDBDebugProcess.init", "breakpointHandler: $breakpointHandler")
+        println("\n========== [LLDBDebugProcess.init] 开始 ==========")
+        LOG.info("=== LLDBDebugProcess 初始化 ===")
+        LOG.info("可执行文件路径: $executablePath")
+        LOG.info("Session: ${session.project.name}")
+        LOG.info("Session 类: ${session.javaClass.name}")
+        LOG.info("创建 breakpointHandler...")
+        
+        println("[LLDBDebugProcess.init] 可执行文件: $executablePath")
+        println("[LLDBDebugProcess.init] Session: ${session.project.name}")
+        
+        // 设置 ServiceWrapper 的监听器
+        serviceWrapper.listener = listener
+        
+        // 打印断点处理器信息
+        LOG.info("BreakpointHandler 类型: ${breakpointHandler.javaClass.name}")
+        LOG.info("BreakpointHandler 支持的断点类型: ${breakpointHandler.breakpointTypeClass.name}")
+        
+        println("[LLDBDebugProcess.init] BreakpointHandler 类型: ${breakpointHandler.javaClass.name}")
+        println("[LLDBDebugProcess.init] 支持的断点类型: ${breakpointHandler.breakpointTypeClass.name}")
+        
+        // 尝试立即检查断点类型是否已注册
+        try {
+            val bpTypes = com.intellij.xdebugger.breakpoints.XBreakpointType.EXTENSION_POINT_NAME.extensionList
+            LOG.info("当前已注册的断点类型数量: ${bpTypes.size}")
+            println("[LLDBDebugProcess.init] 已注册的断点类型数量: ${bpTypes.size}")
+            
+            val lldbType = bpTypes.find { it is LLDBLineBreakpointType }
+            if (lldbType != null) {
+                LOG.info("✓ LLDBLineBreakpointType 已在扩展点注册")
+                println("[LLDBDebugProcess.init] ✓ LLDBLineBreakpointType 已在扩展点注册")
+            } else {
+                LOG.warn("✗ LLDBLineBreakpointType 未在扩展点找到")
+                println("[LLDBDebugProcess.init] ✗ LLDBLineBreakpointType 未在扩展点找到")
+                println("[LLDBDebugProcess.init] 已注册的类型:")
+                bpTypes.forEach {
+                    println("[LLDBDebugProcess.init]   - ${it.javaClass.name} (id=${it.id})")
+                }
+            }
+        } catch (e: Exception) {
+            LOG.error("检查断点类型时出错", e)
+            println("[LLDBDebugProcess.init] ✗ 检查断点类型时出错: ${e.message}")
+            e.printStackTrace()
+        }
         
         // 设置事件回调
-        _Session.onStopped = { threadId, reason ->
-            logSeparator("onStopped", "onStopped 回调触发")
-            logCallStack("onStopped")
-            log("onStopped", "threadId=$threadId, reason=$reason")
-            currentThreadId = threadId
+        listener.onStopped = { threadId, reason ->
             handleStopped(threadId, reason)
         }
         
-        _Session.onOutput = { category, output ->
-            log("onOutput", "category=$category, output=$output")
-            session.consoleView?.print(output, com.intellij.execution.ui.ConsoleViewContentType.NORMAL_OUTPUT)
+        listener.onOutput = { message ->
+            session.consoleView?.print(message + "\n", com.intellij.execution.ui.ConsoleViewContentType.NORMAL_OUTPUT)
         }
         
-        _Session.onTerminated = {
-            log("onTerminated", "调试会话终止")
+        listener.onTerminated = {
             session.stop()
         }
         
-        log("LLDBDebugProcess.init", "构造函数完成")
+        LOG.info("LLDBDebugProcess 初始化完成")
+        println("[LLDBDebugProcess.init] ✓ 初始化完成")
+        println("========== [LLDBDebugProcess.init] 结束 ==========\n")
     }
     
     override fun sessionInitialized() {
-        logSeparator("sessionInitialized", "sessionInitialized 开始")
-        logCallStack("sessionInitialized")
-        log("sessionInitialized", "时间戳: ${System.currentTimeMillis()}")
+        println("\n========== [LLDBDebugProcess.sessionInitialized] 开始 ==========")
+        LOG.info("=== sessionInitialized 开始 ===")
+        LOG.info("可执行文件: $executablePath")
+        LOG.info("当前线程: ${Thread.currentThread().name}")
         
-        // 1. 启动 lldb
-        log("sessionInitialized", "步骤1: 启动 lldb 进程")
-        _Session.start()
+        println("[sessionInitialized] 可执行文件: $executablePath")
+        println("[sessionInitialized] 当前线程: ${Thread.currentThread().name}")
         
-        // 2. 等待进程启动
-        log("sessionInitialized", "步骤2: 等待 200ms")
-        Thread.sleep(200)
+        // 检查断点管理器中的断点
+        val breakpointManager = com.intellij.xdebugger.XDebuggerManager.getInstance(session.project).breakpointManager
+        val allBreakpoints = breakpointManager.allBreakpoints
+        LOG.info("断点管理器中的所有断点数量: ${allBreakpoints.size}")
+        println("[sessionInitialized] 断点管理器中的所有断点数量: ${allBreakpoints.size}")
         
-        // 3. 发送 initialize
-        log("sessionInitialized", "步骤3: 发送 initialize 请求")
-        _Session.initialize { initResponse ->
-            log("sessionInitialized", "initialize 响应: $initResponse")
+        for (bp in allBreakpoints) {
+            LOG.info("  断点类型: ${bp.type.javaClass.name}")
+            LOG.info("  断点类型 ID: ${bp.type.id}")
+            println("[sessionInitialized]   断点类型: ${bp.type.javaClass.name}, ID: ${bp.type.id}")
             
-            // 4. 等待 initialize 完成
-            log("sessionInitialized", "步骤4: 等待 200ms")
-            Thread.sleep(200)
-            
-            // 5. 加载目标程序
-            log("sessionInitialized", "步骤5: 发送 launch 请求")
-            _Session.launch(executablePath) { launchResponse ->
-                log("sessionInitialized", "launch 响应: $launchResponse")
-                
-                // 6. 等待 launch 完成
-                log("sessionInitialized", "步骤6: 等待 300ms")
-                Thread.sleep(300)
-                
-                // 7. 主动同步已注册的断点（参考 Flutter doSetInitialBreakpointsAndResume）
-                log("sessionInitialized", "步骤7: 主动同步所有已注册的断点")
-                doSetInitialBreakpointsAndResume()
-                log("sessionInitialized", "断点同步完成")
+            if (bp is com.intellij.xdebugger.breakpoints.XLineBreakpoint<*>) {
+                val pos = bp.sourcePosition
+                if (pos != null) {
+                    LOG.info("    位置: ${pos.file.path}:${bp.line}")
+                    println("[sessionInitialized]     位置: ${pos.file.path}:${bp.line}")
+                }
             }
         }
         
-        log("sessionInitialized", "同步部分结束（等待异步回调）")
+        // 检查我们的 breakpointHandler 支持的类型
+        LOG.info("=== 检查 BreakpointHandler 配置 ===")
+        LOG.info("BreakpointHandler 类: ${breakpointHandler.javaClass.name}")
+        LOG.info("BreakpointHandler 支持的断点类型: ${breakpointHandler.breakpointTypeClass.name}")
+        
+        println("[sessionInitialized] BreakpointHandler 支持的断点类型: ${breakpointHandler.breakpointTypeClass.name}")
+        
+        // 关键：延迟执行，给断点注册时间
+        ApplicationManager.getApplication().executeOnPooledThread {
+            println("[sessionInitialized] 延迟启动线程开始，等待 500ms...")
+            Thread.sleep(500)
+            println("[sessionInitialized] 延迟结束，开始调试序列")
+            
+            // 再次检查断点状态
+            val breakpoints = breakpointHandler.getXBreakpoints()
+            println("[sessionInitialized] breakpointHandler 中已注册的断点数: ${breakpoints.size}")
+            
+            startDebugSequence()
+        }
+        
+        println("[sessionInitialized] ✓ 已安排延迟启动")
+        println("========== [LLDBDebugProcess.sessionInitialized] 结束 ==========\n")
+    }
+    
+    /**
+     * 启动调试序列
+     */
+    private fun startDebugSequence() {
+        LOG.info("=== 开始调试序列 ===")
+        
+        // 1. 启动 LLDB 进程
+        serviceWrapper.onConnected = {
+            LOG.info("LLDB 已连接，开始初始化序列")
+            
+            // 2. 加载目标程序
+            serviceWrapper.loadTarget(executablePath) {
+                LOG.info("目标程序已加载")
+                
+                // 3. 同步断点
+                breakpointHandler.onLldbReady()
+                
+                // 打印当前注册的断点
+                val breakpoints = breakpointHandler.getXBreakpoints()
+                LOG.info("当前有 ${breakpoints.size} 个断点待同步")
+                for (bp in breakpoints) {
+                    val pos = bp.sourcePosition
+                    if (pos != null) {
+                        LOG.info("  断点: ${pos.file.path}:${bp.line + 1}")
+                    }
+                }
+                
+                if (breakpoints.isEmpty()) {
+                    LOG.warn("警告：没有检测到任何断点！请确保在启动调试前已设置断点。")
+                }
+                
+                breakpointHandler.syncAllBreakpoints {
+                    LOG.info("断点同步完成，启动程序（在入口点暂停）")
+                    
+                    // 4. 运行程序（在入口点暂停）
+                    serviceWrapper.run {
+                        LOG.info("程序已在入口点暂停")
+                        
+                        // 5. 继续运行到第一个断点
+                        LOG.info("继续运行到第一个断点...")
+                        serviceWrapper.resumeThread(1, null)
+                    }
+                }
+            }
+        }
+        
+        serviceWrapper.start()
     }
     
     override fun startStepOver(context: XSuspendContext?) {
-        logSeparator("startStepOver", "单步跳过")
-        logCallStack("startStepOver")
-        log("startStepOver", "currentThreadId=$currentThreadId")
+        LOG.info("=== 单步跳过 ===")
+        val threadId = getCurrentThreadId()
         
-        if (currentThreadId == 0) {
-            log("startStepOver", "currentThreadId 为 0, 无法执行", "ERROR")
+        if (threadId == null || !isThreadSuspended(threadId)) {
+            LOG.warn("无法执行单步跳过：threadId=$threadId, suspended=${threadId?.let { isThreadSuspended(it) }}")
             return
         }
         
-        try {
-            _Session.stepOver(currentThreadId) {
-                log("startStepOver", "响应: $it")
-            }
-        } catch (e: Exception) {
-            log("startStepOver", "异常: ${e.message}", "ERROR")
-            e.printStackTrace()
-        }
+        serviceWrapper.resumeThread(threadId, LLDBServiceWrapper.StepOption.Over)
     }
     
     override fun startStepInto(context: XSuspendContext?) {
-        logSeparator("startStepInto", "单步进入")
-        logCallStack("startStepInto")
-        log("startStepInto", "currentThreadId=$currentThreadId")
+        LOG.info("=== 单步进入 ===")
+        val threadId = getCurrentThreadId()
         
-        if (currentThreadId == 0) {
-            log("startStepInto", "currentThreadId 为 0, 无法执行", "ERROR")
+        if (threadId == null || !isThreadSuspended(threadId)) {
+            LOG.warn("无法执行单步进入：threadId=$threadId, suspended=${threadId?.let { isThreadSuspended(it) }}")
             return
         }
         
-        try {
-            _Session.stepIn(currentThreadId) {
-                log("startStepInto", "响应: $it")
-            }
-        } catch (e: Exception) {
-            log("startStepInto", "异常: ${e.message}", "ERROR")
-            e.printStackTrace()
-        }
+        serviceWrapper.resumeThread(threadId, LLDBServiceWrapper.StepOption.Into)
     }
     
     override fun startStepOut(context: XSuspendContext?) {
-        logSeparator("startStepOut", "单步退出")
-        logCallStack("startStepOut")
-        log("startStepOut", "currentThreadId=$currentThreadId")
+        LOG.info("=== 单步退出 ===")
+        val threadId = getCurrentThreadId()
         
-        if (currentThreadId == 0) {
-            log("startStepOut", "currentThreadId 为 0, 无法执行", "ERROR")
+        if (threadId == null || !isThreadSuspended(threadId)) {
+            LOG.warn("无法执行单步退出：threadId=$threadId, suspended=${threadId?.let { isThreadSuspended(it) }}")
             return
         }
         
-        try {
-            _Session.stepOut(currentThreadId) {
-                log("startStepOut", "响应: $it")
-            }
-        } catch (e: Exception) {
-            log("startStepOut", "异常: ${e.message}", "ERROR")
-            e.printStackTrace()
-        }
+        serviceWrapper.resumeThread(threadId, LLDBServiceWrapper.StepOption.Out)
     }
     
     override fun resume(context: XSuspendContext?) {
-        logSeparator("resume", "继续执行")
-        logCallStack("resume")
-        log("resume", "currentThreadId=$currentThreadId")
+        LOG.info("=== 继续执行 ===")
+        val threadId = getCurrentThreadId()
         
-        if (currentThreadId == 0) {
-            log("resume", "currentThreadId 为 0, 无法执行", "ERROR")
+        if (threadId == null || !isThreadSuspended(threadId)) {
+            LOG.warn("无法继续执行：threadId=$threadId, suspended=${threadId?.let { isThreadSuspended(it) }}")
             return
         }
         
-        try {
-            _Session.continue_(currentThreadId) { response ->
-                log("resume", "响应: $response")
-            }
-        } catch (e: Exception) {
-            log("resume", "异常: ${e.message}", "ERROR")
-            e.printStackTrace()
-        }
+        serviceWrapper.resumeThread(threadId, null)
+    }
+    
+    override fun startPausing() {
+        LOG.info("=== 暂停执行 ===")
+        val threadId = getCurrentThreadId() ?: 1
+        serviceWrapper.pauseThread(threadId)
     }
     
     override fun stop() {
-        logSeparator("stop", "停止调试")
-        logCallStack("stop")
-        _Session.disconnect()
-        log("stop", "调试已断开")
+        LOG.info("=== 停止调试 ===")
+        serviceWrapper.dispose()
     }
     
     override fun getBreakpointHandlers(): Array<XBreakpointHandler<*>> {
+        println("\n========== [LLDBDebugProcess.getBreakpointHandlers] 被调用 ==========")
+        LOG.info("=== getBreakpointHandlers 被调用 ===")
+        LOG.info("返回 breakpointHandler: ${breakpointHandler.javaClass.name}")
+        println("[getBreakpointHandlers] 返回: ${breakpointHandler.javaClass.name}")
+        println("========== [LLDBDebugProcess.getBreakpointHandlers] 结束 ==========\n")
         return arrayOf(breakpointHandler)
     }
     
@@ -193,324 +276,92 @@ class LLDBDebugProcess(
     }
     
     /**
-     * 处理 stopped 事件
-     * 
-     *  核心修复：这是 IntelliJ UI 同步的唯一入口
-     * 1. 必须调用 session.positionReached() 才能让 UI 响应
-     * 2. 必须在 EDT 线程执行 UI 更新
-     * 3. 必须等待 stackTrace 返回才能创建 SuspendContext
+     * 处理停止事件（参考 Flutter 的 handleStopped）
      */
     private fun handleStopped(threadId: Int, reason: String) {
-        logSeparator("handleStopped", "处理停止事件 - IntelliJ UI 同步核心")
-        logCallStack("handleStopped")
-        log("handleStopped", "threadId=$threadId, reason=$reason")
-        log("handleStopped", "当前线程: ${Thread.currentThread().name}")
+        LOG.info("=== 处理停止事件 ===")
+        LOG.info("threadId=$threadId, reason=$reason")
+        
+        // 标记线程为暂停状态
+        isolateSuspended(threadId)
+        
+        // 获取堆栈跟踪
+        serviceWrapper.getStackTrace(threadId) { stackFrames ->
+            LOG.info("获取到 ${stackFrames.size} 个栈帧")
             
-        // 更新当前线程 ID
-        if (threadId != 0) {
-            currentThreadId = threadId
-            log("handleStopped", "已更新 currentThreadId=$currentThreadId")
-        } else {
-            log("handleStopped", "threadId 为 0", "WARN")
-        }
+            if (stackFrames.isEmpty()) {
+                LOG.warn("栈帧为空，无法同步 UI")
+                return@getStackTrace
+            }
             
-        // 关键：必须先获取完整堆栈信息，再调用 positionReached
-        log("handleStopped", "步骤1: 请求堆栈跟踪信息")
-        try {
-            _Session.stackTrace(threadId) { response ->
-                log("handleStopped", "步骤2: stackTrace 响应长度: ${response.length}")
-                log("handleStopped", "stackTrace 响应:\n$response")
-                    
+            // 在 EDT 线程更新 UI
+            ApplicationManager.getApplication().invokeLater {
                 try {
-                    val stackFrames = parseStackTrace(response)
-                    log("handleStopped", "步骤3: 解析出 ${stackFrames.size()} 个栈帧")
+                    // 创建 SuspendContext
+                    val suspendContext = LLDBSuspendContext(
+                        this,
+                        threadId,
+                        stackFrames
+                    )
                     
-                    // 输出每个栈帧的详细信息
-                    for (i in 0 until stackFrames.size()) {
-                        val frame = stackFrames[i].asJsonObject
-                        log("handleStopped", "  栈帧#$i: ${frame}")
-                    }
+                    // 关键：调用 positionReached 同步 UI
+                    LOG.info("调用 session.positionReached()")
+                    session.positionReached(suspendContext)
+                    LOG.info("UI 同步完成")
                     
-                    if (stackFrames.size() == 0) {
-                        log("handleStopped", "stackFrames 为空，无法同步 UI", "WARN")
-                        return@stackTrace
-                    }
-                    
-                    //  关键：在 EDT 线程执行 UI 更新
-                    log("handleStopped", "步骤4: 在 EDT 线程调用 positionReached")
-                    com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
-                        try {
-                            log("handleStopped", "步骤5: 创建 SuspendContext")
-                            val suspendContext = LLDBSuspendContext(
-                                this, 
-                                _Session, 
-                                threadId, 
-                                stackFrames, 
-                                session.project
-                            )
-                            
-                            log("handleStopped", "步骤6: 调用 session.positionReached() 【UI 同步的核心】")
-                            session.positionReached(suspendContext)
-                            log("handleStopped", "步骤7: positionReached 调用成功 ")
-                            
-                            // 如果是断点命中，更新断点状态
-                            if (reason == "breakpoint" && stackFrames.size() > 0) {
-                                val firstFrame = stackFrames[0].asJsonObject
-                                val sourcePath = firstFrame.getAsJsonObject("source")?.get("path")?.asString
-                                val lineNum = firstFrame.get("line")?.asInt
-                                
-                                log("handleStopped", "步骤8: 断点命中位置: $sourcePath:$lineNum")
-                                
-                                if (sourcePath != null && lineNum != null) {
-                                    val hitBreakpoint = breakpointHandler.findBreakpoint(sourcePath, lineNum)
-                                    if (hitBreakpoint != null) {
-                                        session.setBreakpointVerified(hitBreakpoint)
-                                        log("handleStopped", "步骤9: 断点 UI 状态已更新 ")
-                                    } else {
-                                        log("handleStopped", "步骤9: 未找到匹配的断点", "WARN")
-                                    }
-                                }
-                            }
-                            
-                            log("handleStopped", "========== UI 同步完成 ==========")
-                        } catch (e: Exception) {
-                            log("handleStopped", "positionReached 异常: ${e.message}", "ERROR")
-                            e.printStackTrace()
+                    // 如果是断点命中，更新断点状态
+                    if (reason == "breakpoint" && stackFrames.isNotEmpty()) {
+                        val firstFrame = stackFrames[0]
+                        val hitBreakpoint = breakpointHandler.findBreakpoint(firstFrame.file, firstFrame.line)
+                        if (hitBreakpoint != null) {
+                            session.setBreakpointVerified(hitBreakpoint)
+                            LOG.info("断点 UI 状态已更新")
                         }
                     }
                 } catch (e: Exception) {
-                    log("handleStopped", "stackTrace 处理异常: ${e.message}", "ERROR")
-                    e.printStackTrace()
-                }
-            }
-        } catch (e: Exception) {
-            log("handleStopped", "stackTrace 请求异常: ${e.message}", "ERROR")
-            e.printStackTrace()
-        }
-    }
-    
-    /**
-     * 解析 lldb 堆栈跟踪输出为 JsonArray 格式
-     */
-    private fun parseStackTrace(output: String): JsonArray {
-        val stackFrames = JsonArray()
-        
-        log("parseStackTrace", "=== 开始解析堆栈输出 ===")
-        log("parseStackTrace", "输出内容:\n$output")
-        
-        val lines = output.split("\n")
-        var frameId = 0
-        
-        for (i in lines.indices) {
-            val line = lines[i].trim()
-            
-            if (line.startsWith("frame #")) {
-                log("parseStackTrace", "找到 frame 行: $line")
-                val frameInfo = parseFrameLine(line, frameId)
-                if (frameInfo != null) {
-                    stackFrames.add(frameInfo)
-                    log("parseStackTrace", "添加 frame #$frameId")
-                    frameId++
-                }
-            }
-        }
-        
-        log("parseStackTrace", "=== 解析完成, 共 ${stackFrames.size()} 个帧 ===")
-        return stackFrames
-    }
-    
-    /**
-     * 解析单个帧行
-     */
-    private fun parseFrameLine(line: String, frameId: Int): com.google.gson.JsonObject? {
-        try {
-            log("parseFrameLine", "解析行: $line")
-            
-            val atIndex = line.indexOf(" at ")
-            if (atIndex == -1) {
-                log("parseFrameLine", "没有找到 ' at ', 跳过")
-                return null
-            }
-            
-            val afterAt = line.substring(atIndex + 4).trim()
-            log("parseFrameLine", "' at ' 之后: $afterAt")
-            
-            val colonIndex = afterAt.indexOf(":")
-            if (colonIndex == -1) {
-                log("parseFrameLine", "没有找到 ':', 跳过")
-                return null
-            }
-            
-            val fileName = afterAt.substring(0, colonIndex).trim()
-            val rest = afterAt.substring(colonIndex + 1)
-            val lineNum = rest.split(":")[0].trim().toIntOrNull()
-            
-            if (lineNum == null) {
-                log("parseFrameLine", "无法解析行号")
-                return null
-            }
-            
-            log("parseFrameLine", "文件名: $fileName, 行号: $lineNum")
-            
-            val projectPath = session.project.basePath ?: ""
-            val fullPath = if (fileName.startsWith("/")) fileName else "$projectPath/$fileName"
-            
-            val backtickIndex = line.indexOf("`")
-            val funcName = if (backtickIndex != -1 && backtickIndex < atIndex) {
-                line.substring(backtickIndex + 1, atIndex).trim()
-            } else {
-                "unknown"
-            }
-            
-            log("parseFrameLine", "函数名: $funcName, 完整路径: $fullPath")
-            
-            val frameObj = com.google.gson.JsonObject()
-            frameObj.addProperty("id", frameId)
-            frameObj.addProperty("name", funcName)
-            frameObj.addProperty("line", lineNum)
-            frameObj.addProperty("column", 0)
-            
-            val sourceObj = com.google.gson.JsonObject()
-            sourceObj.addProperty("path", fullPath)
-            frameObj.add("source", sourceObj)
-            
-            log("parseFrameLine", "解析成功: $frameObj")
-            
-            return frameObj
-        } catch (e: Exception) {
-            log("parseFrameLine", "解析失败: ${e.message}", "ERROR")
-            e.printStackTrace()
-            return null
-        }
-    }
-    
-    /**
-     * 同步断点到 lldb (参考 Flutter 的 doSetInitialBreakpointsAndResume)
-     * 1. 首先同步已注册的断点（来自 registerBreakpoint）
-     * 2. 主动从 breakpointManager 获取所有 C++ 断点
-     */
-    private fun doSetInitialBreakpointsAndResume() {
-        logSeparator("doSetInitialBreakpointsAndResume", "初始化断点同步")
-        logCallStack("doSetInitialBreakpointsAndResume")
-        
-        // 1. 标记 LLDB 已就绪，触发 onLldbReady 同步缓存的断点
-        log("doSetInitialBreakpointsAndResume", "步骤1: 调用 breakpointHandler.onLldbReady()")
-        breakpointHandler.onLldbReady()
-        log("doSetInitialBreakpointsAndResume", "breakpointHandler.onLldbReady() 完成")
-        
-        // 2. 等待断点同步
-        Thread.sleep(300)
-        
-        // 3. 主动从 breakpointManager 同步所有 C++ 断点
-        log("doSetInitialBreakpointsAndResume", "步骤2: 主动同步 breakpointManager 中的所有断点")
-        syncBreakpoints {
-            log("doSetInitialBreakpointsAndResume", "syncBreakpoints 完成")
-            
-            // 4. 等待断点同步
-            Thread.sleep(300)
-            
-            // 5. 运行程序
-            log("doSetInitialBreakpointsAndResume", "步骤3: 发送 configurationDone 请求")
-            _Session.configurationDone { configResponse ->
-                log("doSetInitialBreakpointsAndResume", "configurationDone 响应: $configResponse")
-                log("doSetInitialBreakpointsAndResume", "调试会话初始化完成!")
-            }
-        }
-    }
-    
-    /**
-     * 从 breakpointManager 同步所有 C++ 断点
-     */
-    private fun syncBreakpoints(onComplete: () -> Unit) {
-        logSeparator("syncBreakpoints", "同步断点")
-        logCallStack("syncBreakpoints")
-        
-        val cppExtensions = setOf("cpp", "c", "cc", "cxx", "h", "hpp", "hxx", "m", "mm")
-        
-        val breakpointManager = XDebuggerManager.getInstance(session.project).breakpointManager
-        val allBreakpoints = breakpointManager.allBreakpoints
-        log("syncBreakpoints", "总断点数: ${allBreakpoints.size}")
-
-        val breakpointsByFile = allBreakpoints
-            .filterIsInstance<XLineBreakpoint<*>>()
-            .filter { bp ->
-                val filePath = bp.sourcePosition?.file?.path ?: return@filter false
-                val ext = filePath.substringAfterLast('.').lowercase()
-                val isCpp = ext in cppExtensions
-                log("syncBreakpoints", "断点 $filePath, ext=$ext, isCpp=$isCpp")
-                isCpp
-            }
-            .groupBy { it.sourcePosition?.file?.path ?: return@groupBy "" }
-        
-        log("syncBreakpoints", "按文件分组: ${breakpointsByFile.keys}")
-
-        if (breakpointsByFile.isEmpty() || breakpointsByFile.all { it.key.isEmpty() }) {
-            log("syncBreakpoints", "没有断点需要设置")
-            onComplete()
-            return
-        }
-
-        var pendingFiles = breakpointsByFile.filter { it.key.isNotEmpty() }.size
-        log("syncBreakpoints", "待处理文件数: $pendingFiles")
-        
-        breakpointsByFile.forEach { (file, breakpoints) ->
-            if (file.isEmpty()) return@forEach
-            
-            log("syncBreakpoints", "处理文件: $file")
-
-            val lines = breakpoints
-                .filter { it.isEnabled }
-                .mapNotNull { it.sourcePosition?.line?.plus(1) }
-            
-            log("syncBreakpoints", "断点行号: $lines")
-
-            if (lines.isNotEmpty()) {
-                val currentBreakpoints = breakpoints.filter { it.isEnabled }
-                
-                _Session.setBreakpoints(file, lines) { response ->
-                    log("syncBreakpoints", "setBreakpoints 响应: $response")
-                    
-                    val success = !response.contains("error:") && 
-                                  (response.contains("Breakpoint") || response.contains("breakpoint"))
-                    
-                    com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
-                        currentBreakpoints.forEach { bp ->
-                            if (success) {
-                                session.setBreakpointVerified(bp)
-                                log("syncBreakpoints", "断点 ${bp.sourcePosition?.file?.path}:${bp.line + 1} 已验证")
-                            } else {
-                                session.setBreakpointInvalid(bp, "Failed to set breakpoint in LLDB")
-                                log("syncBreakpoints", "断点 ${bp.sourcePosition?.file?.path}:${bp.line + 1} 设置失败")
-                            }
-                        }
-                    }
-                    
-                    pendingFiles--
-                    log("syncBreakpoints", "剩余待处理: $pendingFiles")
-                    
-                    if (pendingFiles == 0) {
-                        log("syncBreakpoints", "所有断点设置完成")
-                        onComplete()
-                    }
-                }
-            } else {
-                log("syncBreakpoints", "文件 $file 没有启用的断点")
-                pendingFiles--
-                if (pendingFiles == 0) {
-                    log("syncBreakpoints", "所有断点设置完成")
-                    onComplete()
+                    LOG.error("处理停止事件异常", e)
                 }
             }
         }
     }
     
     /**
-     * 获取 _ 会话
+     * 线程暂停
      */
-    fun get_Session(): LLDBDebugSession = _Session
+    fun isolateSuspended(threadId: Int) {
+        LOG.info("线程暂停: threadId=$threadId")
+        suspendedThreads[threadId] = true
+    }
     
     /**
-     * 获取调试会话 (IntelliJ XDebugSession)
+     * 线程恢复
+     */
+    fun isolateResumed(threadId: Int) {
+        LOG.info("线程恢复: threadId=$threadId")
+        suspendedThreads.remove(threadId)
+    }
+    
+    /**
+     * 检查线程是否暂停
+     */
+    fun isThreadSuspended(threadId: Int): Boolean {
+        return suspendedThreads.containsKey(threadId)
+    }
+    
+    /**
+     * 获取当前线程 ID
+     */
+    fun getCurrentThreadId(): Int? {
+        return serviceWrapper.getCurrentThreadId()
+    }
+    
+    /**
+     * 获取 ServiceWrapper
+     */
+    fun getServiceWrapper(): LLDBServiceWrapper = serviceWrapper
+    
+    /**
+     * 获取调试会话
      */
     fun getDebugSession(): XDebugSession = session
     
@@ -518,4 +369,9 @@ class LLDBDebugProcess(
      * 获取断点处理器
      */
     fun getBreakpointHandler(): LLDBBreakpointHandler = breakpointHandler
+    
+    /**
+     * 获取位置映射器
+     */
+    fun getPositionMapper(): LLDBPositionMapper = positionMapper
 }
