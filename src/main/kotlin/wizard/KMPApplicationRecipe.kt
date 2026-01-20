@@ -238,10 +238,35 @@ private fun generateSettingsGradle(templateRoot: Path, projectRoot: Path, includ
         
         // 提取配置部分（pluginManagement 和 dependencyResolutionManagement）
         val pluginManagementStart = templateContent.indexOf("pluginManagement {")
-        val dependencyManagementEnd = templateContent.indexOf("}", 
-            templateContent.indexOf("dependencyResolutionManagement {") + 1) + 1
+        val dependencyManagementStart = templateContent.indexOf("dependencyResolutionManagement {")
         
-        val configSection = if (pluginManagementStart >= 0 && dependencyManagementEnd > 0) {
+        // 查找 dependencyResolutionManagement 块的结束位置
+        val dependencyManagementEnd = if (dependencyManagementStart >= 0) {
+            var braceCount = 0
+            var foundStart = false
+            var endIndex = dependencyManagementStart
+            
+            for (i in dependencyManagementStart until templateContent.length) {
+                when (templateContent[i]) {
+                    '{' -> {
+                        braceCount++
+                        foundStart = true
+                    }
+                    '}' -> {
+                        braceCount--
+                        if (foundStart && braceCount == 0) {
+                            endIndex = i + 1
+                            break
+                        }
+                    }
+                }
+            }
+            endIndex
+        } else {
+            -1
+        }
+        
+        val configSection = if (pluginManagementStart >= 0 && dependencyManagementEnd > pluginManagementStart) {
             templateContent.substring(pluginManagementStart, dependencyManagementEnd)
         } else {
             // 回退：使用基础配置

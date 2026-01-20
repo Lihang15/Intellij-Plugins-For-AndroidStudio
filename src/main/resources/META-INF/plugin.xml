@@ -46,11 +46,14 @@
 
   <!-- 创建 项目模版 -->
     <extensions defaultExtensionNs="com.android.tools.idea.wizard.template">
-        <wizardTemplateProvider
-                implementation="wizard.KMPWizardTemplateProvider"/>
+<!--        <wizardTemplateProvider-->
+<!--                implementation="wizard.KMPWizardTemplateProvider"/>-->
 
-                 <!-- KMP-OHOS 项目生成器 (IntelliJ Platform API) -->
-        <directoryProjectGenerator implementation="wizard.KmpOhosProjectGenerator"/>
+<!--                 &lt;!&ndash; KMP-OHOS 项目生成器 (IntelliJ Platform API) &ndash;&gt;-->
+<!--        <directoryProjectGenerator implementation="wizard.KmpOhosProjectGenerator"/>-->
+
+        <wizardTemplateProvider
+                implementation="wizard.projectwizard.AndroidStudioTemplateProvider"/>
     </extensions>
 
 
@@ -97,6 +100,9 @@
         <!-- LSP Notification Groups -->
         <notificationGroup id="lsp" displayType="STICKY_BALLOON"/>
         <notificationGroup id="LSPProgressNotification" displayType="NONE" />
+        
+        <!-- Project Wizard Notification Group -->
+        <notificationGroup id="QuickProjectWizard" displayType="BALLOON"/>
 
         <!-- LSP Status Bar Widget -->
         <statusBarWidgetFactory implementation="org.wso2.lsp4intellij.statusbar.LSPServerStatusWidgetFactory"

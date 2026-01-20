@@ -83,7 +83,7 @@ val KMPApplicationTemplate
         )
         
         // 使用自定义图片作为模板缩略图
-        thumb = { getImage("KMPApplicationTemplate", "KMP") }
+        thumb = { getImage("KMPApplicationTemplate", "test") }
     }
 
 private fun getFlutterSdkPathFromEnv(): String {

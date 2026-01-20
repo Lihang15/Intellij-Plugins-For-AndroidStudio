@@ -34,11 +34,17 @@ repositories {
 dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.opentest4j)
+    implementation(libs.freemarker)
     // LSP4IntelliJ dependency for language server protocol support
     implementation("com.github.ballerina-platform:lsp4intellij:0.96.1")
 
     // JFlex for lexer generation
     compileOnly("de.jflex:jflex:1.8.2")
+    
+    // Ktor dependencies for network operations
+    implementation("io.ktor:ktor-client-core:3.0.1")
+    implementation("io.ktor:ktor-client-cio:3.0.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
     // IntelliJ Platform Gradle Plugin Dependencies Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html
     intellijPlatform {
