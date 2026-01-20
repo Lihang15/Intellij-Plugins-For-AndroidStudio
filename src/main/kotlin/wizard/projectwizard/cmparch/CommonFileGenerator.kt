@@ -40,6 +40,10 @@ class CommonFileGenerator(
                         ftManager.getCodeTemplate(Template.TOML)
                     ),
                     GeneratorTemplateFile(
+                        "my_main.cpp",
+                        ftManager.getCodeTemplate(Template.MY_MAIN_CPP)
+                    ),
+                    GeneratorTemplateFile(
                         "composeApp/src/commonMain/kotlin/$packageName/App.kt",
                         ftManager.getCodeTemplate(Template.COMMON_APP)
                     ),

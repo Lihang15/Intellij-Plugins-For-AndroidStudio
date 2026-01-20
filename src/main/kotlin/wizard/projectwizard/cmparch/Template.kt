@@ -41,4 +41,5 @@ object Template {
     const val LOADING_BAR = "loading_bar.kt"
     // const val IDEA_WORKSPACE = "idea_workspace.xml" // Removed: IDE-specific file, auto-generated
     const val COLLECT_EXTENSION = "collect_extension.kt"
+    const val MY_MAIN_CPP = "my_main.cpp"
 }

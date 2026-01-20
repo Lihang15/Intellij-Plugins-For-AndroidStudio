@@ -31,7 +31,10 @@
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">
-        <postStartupActivity implementation="org.jetbrains.plugins.template.startup.MyProjectActivity" />
+        <postStartupActivity implementation="org.jetbrains.plugins.template.projectsync.MyProjectActivity" />
+         <!-- 注册项目级数据服务,项目打开后，sync一些数据，供插件代码全局使用 -->
+            <projectService 
+        serviceImplementation="org.jetbrains.plugins.template.projectsync.DataSyncService"/>
         
           <!-- MyMainCpp 运行配置 -->
         <configurationType implementation="org.jetbrains.plugins.template.cpp.MyMainCppConfigurationType"/>
