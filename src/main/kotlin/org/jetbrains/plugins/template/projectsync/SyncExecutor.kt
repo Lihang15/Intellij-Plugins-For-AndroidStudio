@@ -54,6 +54,9 @@ class DefaultSyncExecutor(
     
     override suspend fun syncProject(project: Project): Result<SyncDataModel> {
         return withContext(Dispatchers.IO) {
+            // Assert we're not on EDT for I/O operations
+            ThreadSafetyChecker.assertIsNotEDT("syncProject")
+            
             try {
                 val projectPath = project.basePath 
                     ?: return@withContext Result.Failure<SyncDataModel>(

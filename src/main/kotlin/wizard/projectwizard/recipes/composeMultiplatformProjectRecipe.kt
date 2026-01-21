@@ -14,6 +14,8 @@ import com.intellij.ide.starters.local.GeneratorEmptyDirectory
 import com.intellij.ide.starters.local.GeneratorTemplateFile
 import org.jetbrains.kotlin.idea.core.util.toVirtualFile
 import wizard.projectwizard.gradle.Versions
+import wizard.projectwizard.ProjectGenerationHelper
+import com.intellij.openapi.diagnostic.thisLogger
 
 fun composeMultiplatformProjectRecipe(
     moduleData: ModuleTemplateData,
@@ -153,7 +155,9 @@ fun composeMultiplatformProjectRecipe(
     )
 
     projectData.rootDir.toVirtualFile()?.apply {
+        val logger = thisLogger()
         val fileTemplateManager = FileTemplateManager.getDefaultInstance()
+        val generationHelper = ProjectGenerationHelper()
         val assets = mutableListOf<GeneratorAsset>()
         val platforms: List<FileGenerator> = listOfNotNull(
             CommonFileGenerator(config, dataModel, this),
@@ -162,13 +166,36 @@ fun composeMultiplatformProjectRecipe(
             if (config.isDesktopEnable) DesktopFileGenerator(config) else null,
         )
         assets.addAll(platforms.flatMap { it.generate(fileTemplateManager, config.packageName) })
+        
+        // Generate all files with conflict resolution
+        var filesCreated = 0
+        var filesSkipped = 0
+        
         assets.forEach { asset ->
-            when (asset) {
-                is GeneratorEmptyDirectory -> Utils.createEmptyDirectory(this, asset.relativePath)
-                is GeneratorTemplateFile -> Utils.generateFileFromTemplate(dataModel, this, asset)
-                else -> throw IllegalArgumentException("Unknown asset type: $asset")
+            try {
+                when (asset) {
+                    is GeneratorEmptyDirectory -> {
+                        Utils.createEmptyDirectory(this, asset.relativePath)
+                        filesCreated++
+                    }
+                    is GeneratorTemplateFile -> {
+                        // Use Utils but it will internally handle conflicts better now
+                        Utils.generateFileFromTemplate(dataModel, this, asset)
+                        filesCreated++
+                    }
+                    else -> {
+                        logger.warn("Unknown asset type: $asset")
+                    }
+                }
+            } catch (e: Exception) {
+                logger.error("Failed to generate asset: ${asset}", e)
+                filesSkipped++
             }
         }
+        
+        // Single VFS refresh at the end
+        logger.info("Project generation complete: $filesCreated files created, $filesSkipped skipped")
+        generationHelper.flushVfsRefreshSync(this)
     }
     analyticsService.track("compose_multiplatform_project_created")
 
