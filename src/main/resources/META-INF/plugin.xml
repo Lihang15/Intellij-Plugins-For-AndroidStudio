@@ -28,6 +28,54 @@
                 description="Start lldb-_ and send initialize">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
+        
+        <!-- Test Device Action -->
+        <action
+                id="HarmonyOS.TestDevice"
+                class="org.jetbrains.plugins.template.device.TestDeviceAction"
+                text="Test HarmonyOS Device List"
+                description="Test device list retrieval">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+        
+        <!-- Force Init Test Action -->
+        <action
+                id="HarmonyOS.ForceInit"
+                class="org.jetbrains.plugins.template.device.ForceInitAction"
+                text="Force Init Test"
+                description="Force initialization test">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+        
+        <!-- Test ExecutionTarget Action -->
+        <action
+                id="HarmonyOS.TestExecutionTarget"
+                class="org.jetbrains.plugins.template.device.TestExecutionTargetAction"
+                text="Test ExecutionTarget"
+                description="Test ExecutionTarget functionality">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+        
+        <!-- Switch to HarmonyOS Device Action -->
+        <action
+                id="HarmonyOS.SwitchDevice"
+                class="org.jetbrains.plugins.template.device.SwitchToHarmonyDeviceAction"
+                text="Switch to HarmonyOS Device"
+                description="Switch to first HarmonyOS device">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+    </actions>
+    
+    <!-- HarmonyOS Device Selector in Toolbar (自定义设备选择器) -->
+    <actions>
+        <!-- 鸿蒙设备选择器，只在 MyMainApp 配置时显示 -->
+        <action id="HarmonyOS.UnifiedDeviceSelector" 
+                class="org.jetbrains.plugins.template.device.UnifiedDeviceSelectorAction"
+                description="HarmonyOS Device Selection"
+                icon="AllIcons.General.GearPlain">
+            <!-- 添加到运行配置选择器之后 -->
+            <add-to-group anchor="after" group-id="ToolbarRunGroup" relative-to-action="RunConfiguration"/>
+        </action>
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -35,6 +83,12 @@
          <!-- 注册项目级数据服务,项目打开后，sync一些数据，供插件代码全局使用 -->
             <projectService 
         serviceImplementation="org.jetbrains.plugins.template.projectsync.DataSyncService"/>
+        
+        <!-- HarmonyOS Device Service -->
+        <projectService serviceImplementation="org.jetbrains.plugins.template.device.DeviceService"/>
+        
+        <!-- HarmonyOS Execution Target Provider - 设备出现在 Android 设备下拉列表中 -->
+        <executionTargetProvider implementation="org.jetbrains.plugins.template.device.HarmonyExecutionTargetProvider"/>
         
           <!-- MyMainCpp 运行配置 -->
         <configurationType implementation="org.jetbrains.plugins.template.cpp.MyMainCppConfigurationType"/>
@@ -103,6 +157,9 @@
         <!-- LSP Notification Groups -->
         <notificationGroup id="lsp" displayType="STICKY_BALLOON"/>
         <notificationGroup id="LSPProgressNotification" displayType="NONE" />
+        
+        <!-- HarmonyOS Device Notification Group -->
+        <notificationGroup id="HarmonyOS Device" displayType="BALLOON"/>
         
         <!-- Project Wizard Notification Group -->
         <notificationGroup id="QuickProjectWizard" displayType="BALLOON"/>
@@ -173,5 +230,12 @@
         <listener class="org.wso2.lsp4intellij.listeners.LSPProjectManagerListener"
                   topic="com.intellij.openapi.project.ProjectManagerListener"/>
     </applicationListeners>
+    
+    <!-- Project Listeners -->
+    <projectListeners>
+        <!-- Run Configuration Listener for HarmonyOS Device Selection -->
+        <listener class="org.jetbrains.plugins.template.device.RunConfigurationListener"
+                  topic="com.intellij.execution.RunManagerListener"/>
+    </projectListeners>
 
 </idea-plugin>

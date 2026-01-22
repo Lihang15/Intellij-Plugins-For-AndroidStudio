@@ -24,7 +24,7 @@ class LLDBPositionMapper(private val project: Project) {
     
     /**
      * 获取断点路径（IDE → LLDB）
-     * 用于设置断点时
+     * 用于设置断点时ƒ
      */
     fun getBreakpointPath(sourcePosition: XSourcePosition): String {
         val file = sourcePosition.file

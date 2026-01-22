@@ -8,7 +8,8 @@ import com.intellij.execution.configurations.RunProfileState
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.vfs.VirtualFileManager
+import org.jetbrains.plugins.template.device.DeviceService
+import org.jetbrains.plugins.template.device.HarmonyDevice
 import java.io.File
 
 /**
@@ -25,11 +26,38 @@ class MyMainCppRunConfiguration(
     }
 
     override fun getConfigurationEditor(): SettingsEditor<out RunConfiguration> {
-        return MyMainCppSettingsEditor()
+        println("=== MyMainCppRunConfiguration.getConfigurationEditor() CALLED ===")
+        println("Project: ${project.name}")
+        val editor = MyMainCppSettingsEditor(project)
+        println("Editor created: $editor")
+        return editor
     }
 
     override fun getState(executor: Executor, environment: ExecutionEnvironment): RunProfileState {
         return MyMainCppRunProfileState(environment)
+    }
+
+    /**
+     * 获取选中的设备 ID
+     */
+    fun getSelectedDeviceId(): String? {
+        return options.deviceId
+    }
+
+    /**
+     * 设置选中的设备 ID
+     */
+    fun setSelectedDeviceId(deviceId: String?) {
+        options.deviceId = deviceId
+    }
+
+    /**
+     * 获取选中的设备对象
+     */
+    fun getSelectedDevice(): HarmonyDevice? {
+        val deviceId = getSelectedDeviceId() ?: return null
+        val deviceService = DeviceService.getInstance(project)
+        return deviceService.getConnectedDevices().find { it.deviceId == deviceId }
     }
 
     /**

@@ -41,6 +41,10 @@ dependencies {
     // JFlex for lexer generation
     compileOnly("de.jflex:jflex:1.8.2")
     
+    // Kotlin Coroutines for async operations
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.3")
+    
     // Ktor dependencies for network operations
     implementation("io.ktor:ktor-client-core:3.0.1")
     implementation("io.ktor:ktor-client-cio:3.0.1")

@@ -8,6 +8,9 @@ import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.process.ProcessTerminatedListener
 import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.project.Project
+import org.jetbrains.plugins.template.device.DeviceService
+import org.jetbrains.plugins.template.device.HarmonyDevice
+import org.jetbrains.plugins.template.device.HarmonyExecutionTarget
 import java.io.File
 
 /**
@@ -20,6 +23,28 @@ class MyMainCppRunProfileState(
     override fun startProcess(): ProcessHandler {
         val configuration = environment.runProfile as MyMainCppRunConfiguration
         val project = configuration.project
+
+        // 优先从 ExecutionTarget 获取设备（工具栏下拉菜单选择）
+        val selectedDevice: HarmonyDevice? = when (val target = environment.executionTarget) {
+            is HarmonyExecutionTarget -> {
+                println("使用工具栏下拉菜单选择的设备: ${target.displayName}")
+                target.getDevice()
+            }
+            else -> {
+                // 回退到 DeviceService 中的选中设备
+                println("ExecutionTarget 不是 HarmonyExecutionTarget，使用 DeviceService")
+                DeviceService.getInstance(project).getSelectedDevice()
+            }
+        }
+        
+        if (selectedDevice == null) {
+            throw ExecutionException(
+                "未选择 HarmonyOS 设备。\n" +
+                "请在工具栏设备下拉菜单中选择一个设备。"
+            )
+        }
+        
+        println("目标设备: ${selectedDevice.displayName} (${selectedDevice.deviceId})")
 
         // 获取文件路径
         val cppFilePath = configuration.getMyMainCppPath()
@@ -40,11 +65,16 @@ class MyMainCppRunProfileState(
         println("编译成功！")
         println("-".repeat(50))
         println("开始运行程序...")
+        println("设备: ${selectedDevice.deviceId}")
         println("-".repeat(50))
 
-        // 第二步：运行
+        // 第二步：运行（这里可以添加 HDC 命令来在设备上运行）
         val commandLine = GeneralCommandLine(outputPath)
         commandLine.setWorkDirectory(project.basePath)
+        
+        // TODO: 如果需要在设备上运行，可以使用 HDC 命令
+        // 例如: hdc -t ${selectedDevice.deviceId} file send $outputPath /data/local/tmp/
+        //      hdc -t ${selectedDevice.deviceId} shell /data/local/tmp/my_main
 
         val processHandler = KillableColoredProcessHandler(commandLine)
         ProcessTerminatedListener.attach(processHandler)
