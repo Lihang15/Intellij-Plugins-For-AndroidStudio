@@ -1,5 +1,8 @@
 package org.jetbrains.plugins.template.device
 
+import com.intellij.icons.AllIcons
+import javax.swing.Icon
+
 /**
  * Represents a HarmonyOS device or emulator.
  *
@@ -12,6 +15,17 @@ data class HarmonyDevice(
     val displayName: String,
     val isEmulator: Boolean = true
 ) {
+    /**
+     * Returns the appropriate icon for this device
+     */
+    fun getIcon(): Icon {
+        return if (isEmulator) {
+            AllIcons.Nodes.Module  // 模块图标用于模拟器
+        } else {
+            AllIcons.Debugger.ThreadRunning  // 调试图标用于真机
+        }
+    }
+    
     companion object {
         /**
          * Creates a HarmonyDevice from a device ID string.
@@ -27,11 +41,11 @@ data class HarmonyDevice(
             val displayName = when {
                 isEmulator && trimmedId.startsWith("127.0.0.1:") -> {
                     val port = trimmedId.substringAfter(":")
-                    "Emulator ($port)"
+                    "Emulator-$port"
                 }
                 isEmulator && trimmedId.startsWith("localhost:") -> {
                     val port = trimmedId.substringAfter(":")
-                    "Emulator ($port)"
+                    "Emulator-$port"
                 }
                 else -> trimmedId // Physical device, use ID as name
             }

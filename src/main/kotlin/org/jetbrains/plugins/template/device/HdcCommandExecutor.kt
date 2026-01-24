@@ -120,7 +120,8 @@ class HdcCommandExecutor(private val hdcPath: String) {
      *
      * Expected formats:
      * - "[Empty]" when no devices are connected
-     * - One device ID per line when devices are connected
+     * - Device IDs may be on separate lines OR concatenated without newlines
+     * - Device ID format: "127.0.0.1:PORT" or other formats
      *
      * @param output The raw output from HDC command
      * @return List of parsed HarmonyDevice objects
@@ -130,17 +131,28 @@ class HdcCommandExecutor(private val hdcPath: String) {
             return emptyList()
         }
         
-        return output.lines()
-            .map { it.trim() }
-            .filter { it.isNotBlank() && it != EMPTY_OUTPUT }
-            .map { deviceId ->
-                try {
-                    HarmonyDevice.fromDeviceId(deviceId)
-                } catch (e: Exception) {
-                    logger.warn("Failed to parse device ID: $deviceId", e)
-                    null
-                }
+        println("=== Raw HDC output: [$output] ===")
+        
+        // HDC may output device IDs without newlines, e.g., "127.0.0.1:5555127.0.0.1:5557"
+        // We need to split by the pattern "127.0.0.1:" or "localhost:"
+        val devicePattern = Regex("(127\\.0\\.0\\.1:\\d+|localhost:\\d+|[a-zA-Z0-9]+)")
+        val matches = devicePattern.findAll(output)
+        
+        val devices = matches.map { match ->
+            val deviceId = match.value.trim()
+            println("=== Found device ID: [$deviceId] ===")
+            try {
+                val device = HarmonyDevice.fromDeviceId(deviceId)
+                println("=== Created device: ${device.displayName} (${device.deviceId}) ===")
+                device
+            } catch (e: Exception) {
+                logger.warn("Failed to parse device ID: $deviceId", e)
+                println("!!! Failed to parse device ID: $deviceId - ${e.message}")
+                null
             }
-            .filterNotNull()
+        }.filterNotNull().toList()
+        
+        println("=== Total devices parsed: ${devices.size} ===")
+        return devices
     }
 }

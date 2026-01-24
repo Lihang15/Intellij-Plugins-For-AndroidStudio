@@ -64,18 +64,116 @@
                 description="Switch to first HarmonyOS device">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
+        
+        <!-- Diagnostic Action -->
+        <action
+                id="HarmonyOS.Diagnostic"
+                class="org.jetbrains.plugins.template.device.DiagnosticAction"
+                text="Diagnose Device Loading"
+                description="Check why device list is not loading">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+        
+        <!-- Manual Poll Action -->
+        <action
+                id="HarmonyOS.ManualPoll"
+                class="org.jetbrains.plugins.template.device.ManualPollAction"
+                text="Manual Device Poll"
+                description="Manually trigger device polling">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+        
+        <!-- Force Start Poller Action -->
+        <action
+                id="HarmonyOS.ForceStartPoller"
+                class="org.jetbrains.plugins.template.device.ForceStartPollerAction"
+                text="Force Start Poller"
+                description="Force start the device poller">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+        
+        <!-- Simple Test Action -->
+        <action
+                id="HarmonyOS.SimpleTest"
+                class="org.jetbrains.plugins.template.device.SimpleTestAction"
+                text="Simple Device Test"
+                description="Simple device test without reflection">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+        
+        <!-- Refresh UI Action -->
+        <action
+                id="HarmonyOS.RefreshUI"
+                class="org.jetbrains.plugins.template.device.RefreshUIAction"
+                text="Refresh Device UI"
+                description="Force refresh device selector UI">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+        
+        <!-- Show Device Selector Action -->
+        <action
+                id="HarmonyOS.ShowDeviceSelector"
+                class="org.jetbrains.plugins.template.device.ShowDeviceSelectorAction"
+                text="Show HarmonyOS Device Selector"
+                description="Show HarmonyOS device selection popup">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+        
+        <!-- Check Run Configuration Action -->
+        <action
+                id="HarmonyOS.CheckRunConfig"
+                class="org.jetbrains.plugins.template.device.CheckRunConfigAction"
+                text="Check Run Configuration"
+                description="Check current run configuration">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+        
+        <!-- List Run Configurations Action -->
+        <action
+                id="HarmonyOS.ListRunConfigs"
+                class="org.jetbrains.plugins.template.device.ListRunConfigsAction"
+                text="List All Run Configurations"
+                description="List all run configurations">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
     </actions>
     
     <!-- HarmonyOS Device Selector in Toolbar (自定义设备选择器) -->
     <actions>
-        <!-- 鸿蒙设备选择器，只在 MyMainApp 配置时显示 -->
-        <action id="HarmonyOS.UnifiedDeviceSelector" 
-                class="org.jetbrains.plugins.template.device.UnifiedDeviceSelectorAction"
-                description="HarmonyOS Device Selection"
-                icon="AllIcons.General.GearPlain">
-            <!-- 添加到运行配置选择器之后 -->
-            <add-to-group anchor="after" group-id="ToolbarRunGroup" relative-to-action="RunConfiguration"/>
+        <!-- 测试工具栏 Action -->
+        <action id="HarmonyOS.TestToolbar"
+                class="org.jetbrains.plugins.template.device.TestToolbarAction"
+                description="Test Toolbar Action"
+                text="Test Toolbar">
+            <add-to-group group-id="MainToolBar" anchor="last"/>
         </action>
+        
+        <!-- 最简单的工具栏设备选择器 - 直接添加到 MainToolBar -->
+        <action id="HarmonyOS.SimpleToolbarDeviceSelector"
+                class="org.jetbrains.plugins.template.device.SimpleToolbarDeviceSelectorAction"
+                description="HarmonyOS Device Selection"
+                icon="AllIcons.Debugger.ThreadRunning"
+                text="HarmonyOS Device">
+            <add-to-group group-id="MainToolBar" anchor="last"/>
+        </action>
+        
+        <!-- HarmonyOS Device Selector Group - 新 UI (2022.3+) -->
+        <group id="HarmonyOS.MainToolbarActions">
+            <action id="HarmonyOS.DeviceSelector"
+                    class="org.jetbrains.plugins.template.device.FlutterStyleDeviceSelectorAction"
+                    description="HarmonyOS Device Selection"
+                    text="HarmonyOS Device"/>
+            <add-to-group anchor="before" group-id="RunToolbarMainActionGroup" relative-to-action="RedesignedRunConfigurationSelector"/>
+        </group>
+        
+        <!-- HarmonyOS Device Selector Group - 旧 UI (兼容性) -->
+        <group id="HarmonyOS.MainToolbarActionsLegacy">
+            <action id="HarmonyOS.DeviceSelectorLegacy"
+                    class="org.jetbrains.plugins.template.device.FlutterStyleDeviceSelectorAction"
+                    description="HarmonyOS Device Selection"
+                    text="HarmonyOS Device"/>
+            <add-to-group anchor="before" group-id="ToolbarRunGroup" relative-to-action="RunConfiguration"/>
+        </group>
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -87,8 +185,8 @@
         <!-- HarmonyOS Device Service -->
         <projectService serviceImplementation="org.jetbrains.plugins.template.device.DeviceService"/>
         
-        <!-- HarmonyOS Execution Target Provider - 设备出现在 Android 设备下拉列表中 -->
-        <executionTargetProvider implementation="org.jetbrains.plugins.template.device.HarmonyExecutionTargetProvider"/>
+        <!-- 注释掉 HarmonyOS Execution Target Provider - 不再使用 ExecutionTarget 系统 -->
+        <!-- <executionTargetProvider implementation="org.jetbrains.plugins.template.device.HarmonyExecutionTargetProvider"/> -->
         
           <!-- MyMainCpp 运行配置 -->
         <configurationType implementation="org.jetbrains.plugins.template.cpp.MyMainCppConfigurationType"/>
@@ -237,5 +335,12 @@
         <listener class="org.jetbrains.plugins.template.device.RunConfigurationListener"
                   topic="com.intellij.execution.RunManagerListener"/>
     </projectListeners>
+    
+    <!-- Application Listeners -->
+    <applicationListeners>
+        <!-- Global Run Configuration Listener -->
+        <listener class="org.jetbrains.plugins.template.device.GlobalRunConfigurationListener"
+                  topic="com.intellij.execution.RunManagerListener"/>
+    </applicationListeners>
 
 </idea-plugin>

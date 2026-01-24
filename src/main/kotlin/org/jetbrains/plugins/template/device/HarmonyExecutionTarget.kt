@@ -23,7 +23,7 @@ class HarmonyExecutionTarget(
     }
     
     override fun getIcon(): Icon {
-        return AllIcons.Debugger.ThreadRunning
+        return device.getIcon()  // 使用设备自己的图标
     }
     
     override fun canRun(configuration: RunConfiguration): Boolean {
@@ -32,6 +32,13 @@ class HarmonyExecutionTarget(
         val result = configuration is MyMainCppRunConfiguration
         println("Can run: $result")
         return result
+    }
+    
+    /**
+     * 表示这个目标是否准备好运行
+     */
+    override fun isReady(): Boolean {
+        return true  // HarmonyOS 设备总是准备好的
     }
     
     /**

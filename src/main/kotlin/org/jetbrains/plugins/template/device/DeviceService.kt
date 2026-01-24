@@ -1,5 +1,7 @@
 package org.jetbrains.plugins.template.device
 
+import com.intellij.execution.ExecutionTargetManager
+import com.intellij.execution.RunManager
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
@@ -8,6 +10,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import org.jetbrains.plugins.template.cpp.MyMainCppRunConfiguration
 import java.util.concurrent.atomic.AtomicReference
 
 /**

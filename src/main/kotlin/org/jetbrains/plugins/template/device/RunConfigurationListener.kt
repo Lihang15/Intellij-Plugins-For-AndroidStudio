@@ -12,6 +12,23 @@ import org.jetbrains.plugins.template.cpp.MyMainCppRunConfiguration
  */
 class RunConfigurationListener(private val project: Project) : RunManagerListener {
     
+    /**
+     * 初始化时检查并设置默认设备
+     */
+    fun initialize() {
+        println("=== RunConfigurationListener.initialize() ===")
+        val runManager = RunManager.getInstance(project)
+        val selectedConfiguration = runManager.selectedConfiguration
+        
+        if (selectedConfiguration != null) {
+            println("Current selected configuration: ${selectedConfiguration.name}")
+            // 触发一次配置选择逻辑
+            runConfigurationSelected(selectedConfiguration)
+        } else {
+            println("No configuration selected")
+        }
+    }
+    
     override fun runConfigurationSelected(settings: RunnerAndConfigurationSettings?) {
         println("=== RunConfigurationListener.runConfigurationSelected() ===")
         println("Selected configuration: ${settings?.name}")

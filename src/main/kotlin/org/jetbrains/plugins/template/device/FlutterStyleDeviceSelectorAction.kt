@@ -6,6 +6,7 @@ import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.CustomComponentAction
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
@@ -15,9 +16,9 @@ import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.scale.JBUIScale
+import com.intellij.util.ModalityUiUtil
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
-import org.jetbrains.plugins.template.cpp.MyMainCppRunConfiguration
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -25,13 +26,12 @@ import java.util.*
 import javax.swing.*
 
 /**
- * Unified device selector that shows different devices based on the selected run configuration.
- * - For MyMainApp: Shows HarmonyOS devices
- * - For other configurations: Hides itself (lets Android selector show)
+ * 基于 Flutter DeviceSelectorAction 的实现
+ * 完全模仿 Flutter 的设备选择器
  */
-class UnifiedDeviceSelectorAction : AnAction(), CustomComponentAction, DumbAware {
+class FlutterStyleDeviceSelectorAction : AnAction(), CustomComponentAction, DumbAware {
     
-    private val logger = Logger.getInstance(UnifiedDeviceSelectorAction::class.java)
+    private val logger = Logger.getInstance(FlutterStyleDeviceSelectorAction::class.java)
     private val knownProjects = Collections.synchronizedList(mutableListOf<Project>())
     
     companion object {
@@ -42,6 +42,9 @@ class UnifiedDeviceSelectorAction : AnAction(), CustomComponentAction, DumbAware
         
         private const val TOOLBAR_FOREGROUND_KEY = "MainToolbar.foreground"
         private const val TOOLBAR_ICON_HOVER_BACKGROUND_KEY = "MainToolbar.Icon.hoverBackground"
+        
+        private val DEFAULT_DEVICE_ICON = AllIcons.Debugger.ThreadRunning
+        private val DEFAULT_ARROW_ICON = AllIcons.General.ChevronDown
     }
     
     override fun getActionUpdateThread(): ActionUpdateThread {
@@ -49,21 +52,21 @@ class UnifiedDeviceSelectorAction : AnAction(), CustomComponentAction, DumbAware
     }
     
     override fun actionPerformed(e: AnActionEvent) {
-        println("=== UnifiedDeviceSelectorAction.actionPerformed() CALLED ===")
+        println("=== FlutterStyleDeviceSelectorAction.actionPerformed() ===")
         val project = e.project ?: return
+        
         showDevicePopup(e.dataContext, e.getData(PlatformCoreDataKeys.CONTEXT_COMPONENT))
     }
     
     override fun createCustomComponent(presentation: Presentation, place: String): JComponent {
         println("========================================")
-        println("=== UnifiedDeviceSelectorAction.createCustomComponent() ===")
-        println("=== Place: $place ===")
-        println("=== Thread: ${Thread.currentThread().name} ===")
+        println("=== FlutterStyleDeviceSelectorAction.createCustomComponent() ===")
+        println("Place: $place")
         println("========================================")
         
-        val iconLabel = JBLabel(AllIcons.Debugger.ThreadRunning)
-        val textLabel = JBLabel("Select Device")
-        val arrowLabel = JBLabel(AllIcons.General.ChevronDown)
+        val iconLabel = JBLabel(DEFAULT_DEVICE_ICON)
+        val textLabel = JBLabel()
+        val arrowLabel = JBLabel(DEFAULT_ARROW_ICON)
         
         textLabel.foreground = getToolbarForegroundColor()
         
@@ -130,120 +133,80 @@ class UnifiedDeviceSelectorAction : AnAction(), CustomComponentAction, DumbAware
             }
         }
         
-        println("=== Custom component created successfully ===")
-        println("=== Button visible: ${button.isVisible}, enabled: ${button.isEnabled} ===")
-        println("========================================")
-        
+        println("Custom component created successfully")
         return button
     }
     
     override fun update(e: AnActionEvent) {
         println("========================================")
-        println("=== UnifiedDeviceSelectorAction.update() CALLED ===")
-        println("=== Thread: ${Thread.currentThread().name} ===")
+        println("=== FlutterStyleDeviceSelectorAction.update() ===")
         
         val project = e.project
         if (project == null) {
-            println("=== Project is null, hiding ===")
-            println("========================================")
+            println("Project is null, hiding")
             e.presentation.isVisible = false
             return
         }
         
-        println("=== Project: ${project.name} ===")
-        println("=== Presentation visible: ${e.presentation.isVisible}, enabled: ${e.presentation.isEnabled} ===")
+        println("Project: ${project.name}")
         
-        // 检查当前选中的运行配置
-        val runManager = com.intellij.execution.RunManager.getInstance(project)
-        val selectedConfiguration = runManager.selectedConfiguration
-        val isMyMainApp = selectedConfiguration?.configuration is MyMainCppRunConfiguration
-        
-        println("=== Selected configuration: ${selectedConfiguration?.name}, isMyMainApp: $isMyMainApp ===")
-        
-        // 如果不是 MyMainApp，隐藏整个组件
-        if (!isMyMainApp) {
-            println("=== Not MyMainApp, hiding ===")
-            e.presentation.isVisible = false
-            updateComponentVisibility(e.presentation, false)
-            return
-        }
-        
-        println("=== Is MyMainApp, showing ===")
+        // 始终显示，就像 Flutter 那样
         e.presentation.isVisible = true
-        e.presentation.isEnabled = true
-        updateComponentVisibility(e.presentation, true)
         
         val presentation = e.presentation
         
-        // 注册监听器（仅首次）- 参考 flutter-intellij 的实现
+        // 注册监听器（仅首次）
         if (!knownProjects.contains(project)) {
-            println("=== UnifiedDeviceSelectorAction: First time for project ${project.name} ===")
+            println("First time for project ${project.name}, registering listeners")
             knownProjects.add(project)
             
-            val application = ApplicationManager.getApplication()
-            if (application != null) {
-                application.messageBus.connect().subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
+            ApplicationManager.getApplication().messageBus.connect()
+                .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
                     override fun projectClosed(closedProject: Project) {
                         knownProjects.remove(closedProject)
                     }
                 })
-            }
             
-            val deviceListener = { 
-                println("=== Device listener callback triggered ===")
-                queueUpdate(project, presentation) 
+            val deviceListener = {
+                println("Device listener triggered")
+                queueUpdate(project, presentation)
             }
             DeviceService.getInstance(project).addListener(deviceListener)
-            println("=== Listener registered ===")
             
-            val projectManager = ProjectManager.getInstance()
-            projectManager.addProjectManagerListener(project, object : ProjectManagerListener {
+            ProjectManager.getInstance().addProjectManagerListener(project, object : ProjectManagerListener {
                 override fun projectClosing(closingProject: Project) {
                     DeviceService.getInstance(closingProject).removeListener(deviceListener)
                 }
             })
             
-            // 首次注册后立即更新 - 关键！
+            // 立即更新
             updatePresentation(project, presentation)
         }
         
-        // 每次 update 都查询当前状态并更新 UI - 参考 flutter-intellij
+        // 更新显示内容
         val deviceService = DeviceService.getInstance(project)
         val devices = deviceService.getConnectedDevices()
         val selectedDevice = deviceService.getSelectedDevice()
         val status = deviceService.getStatus()
         
-        println("=== UnifiedDeviceSelectorAction.update() ===")
-        println("Status: $status")
-        println("Devices count: ${devices.size}")
-        devices.forEach { device ->
-            println("  Device: ${device.displayName} (${device.deviceId})")
-        }
-        println("Selected device: ${selectedDevice?.displayName ?: "null"}")
+        println("Status: $status, Devices: ${devices.size}, Selected: ${selectedDevice?.displayName}")
         
-        val icon: Icon
         val text: String
+        val icon: Icon
         
         when {
-            status == DeviceService.State.LOADING -> {
-                icon = AllIcons.Process.Step_1
-                text = "Loading..."
-            }
-            status == DeviceService.State.INACTIVE -> {
-                icon = AllIcons.General.Error
-                text = "HDC Unavailable"
-            }
             devices.isEmpty() -> {
-                icon = AllIcons.Debugger.ThreadRunning
-                text = "Monitoring..."
+                val isLoading = status == DeviceService.State.LOADING
+                text = if (isLoading) "Loading..." else "No Devices"
+                icon = DEFAULT_DEVICE_ICON
             }
             selectedDevice == null -> {
-                icon = AllIcons.General.Warning
                 text = "Select Device"
+                icon = DEFAULT_DEVICE_ICON
             }
             else -> {
-                icon = selectedDevice.getIcon()
                 text = selectedDevice.displayName
+                icon = selectedDevice.getIcon()
                 presentation.isEnabled = true
             }
         }
@@ -251,41 +214,21 @@ class UnifiedDeviceSelectorAction : AnAction(), CustomComponentAction, DumbAware
         presentation.text = text
         presentation.icon = icon
         
-        println("Display state: icon=$icon, text=$text")
-        println("========================================")
+        println("Set presentation: text='$text', icon=$icon")
         
-        // 更新自定义组件 - 参考 flutter-intellij
+        // 更新自定义组件
         updateCustomComponent(presentation, icon, text)
+        
+        println("========================================")
     }
     
-    /**
-     * 更新自定义组件的可见性
-     */
-    private fun updateComponentVisibility(presentation: Presentation, visible: Boolean) {
-        val customComponent = presentation.getClientProperty(CUSTOM_COMPONENT_KEY) as? JButton
-        if (customComponent != null) {
-            customComponent.isVisible = visible
-            var parent = customComponent.parent
-            if (parent != null) {
-                parent.doLayout()
-                parent.repaint()
-            }
-            println("=== Component visibility set to: $visible ===")
-        }
-    }
-    
-    /**
-     * 更新自定义组件的内容
-     */
     private fun updateCustomComponent(presentation: Presentation, icon: Icon, text: String) {
         val customComponent = presentation.getClientProperty(CUSTOM_COMPONENT_KEY) as? JButton
         if (customComponent != null) {
             val iconLabel = customComponent.getClientProperty(ICON_LABEL_KEY) as? JBLabel
             val textLabel = customComponent.getClientProperty(TEXT_LABEL_KEY) as? JBLabel
             
-            if (iconLabel != null) {
-                iconLabel.icon = icon
-            }
+            iconLabel?.icon = icon
             if (textLabel != null) {
                 textLabel.text = text
                 textLabel.foreground = getToolbarForegroundColor()
@@ -298,9 +241,7 @@ class UnifiedDeviceSelectorAction : AnAction(), CustomComponentAction, DumbAware
                 customComponent.revalidate()
                 customComponent.repaint()
             }
-            println("=== Updated custom component: text=$text ===")
-        } else {
-            println("=== Custom component not ready yet ===")
+            println("Updated custom component")
         }
     }
     
@@ -309,43 +250,22 @@ class UnifiedDeviceSelectorAction : AnAction(), CustomComponentAction, DumbAware
         val deviceService = DeviceService.getInstance(project)
         val devices = deviceService.getConnectedDevices()
         
+        println("Showing device popup, devices: ${devices.size}")
+        
+        val group = DefaultActionGroup()
+        
         if (devices.isEmpty()) {
-            val group = DefaultActionGroup()
             group.add(object : AnAction("No Devices Connected") {
                 override fun actionPerformed(e: AnActionEvent) {}
                 override fun update(e: AnActionEvent) {
                     e.presentation.isEnabled = false
                 }
-                override fun getActionUpdateThread(): ActionUpdateThread {
-                    return ActionUpdateThread.BGT
-                }
+                override fun getActionUpdateThread() = ActionUpdateThread.BGT
             })
-            group.addSeparator()
-            group.add(object : AnAction("Waiting for HarmonyOS devices...") {
-                override fun actionPerformed(e: AnActionEvent) {}
-                override fun update(e: AnActionEvent) {
-                    e.presentation.isEnabled = false
-                }
-                override fun getActionUpdateThread(): ActionUpdateThread {
-                    return ActionUpdateThread.BGT
-                }
-            })
-            
-            val popup = JBPopupFactory.getInstance()
-                .createActionGroupPopup(null, group, dataContext,
-                    JBPopupFactory.ActionSelectionAid.SPEEDSEARCH, false)
-            
-            if (component != null) {
-                popup.showUnderneathOf(component)
-            } else {
-                popup.showInBestPositionFor(dataContext)
+        } else {
+            devices.forEach { device ->
+                group.add(SelectDeviceAction(device, project))
             }
-            return
-        }
-        
-        val group = DefaultActionGroup()
-        devices.forEach { device ->
-            group.add(SelectDeviceAction(device, project))
         }
         
         val popup = JBPopupFactory.getInstance()
@@ -360,25 +280,17 @@ class UnifiedDeviceSelectorAction : AnAction(), CustomComponentAction, DumbAware
     }
     
     private fun queueUpdate(project: Project, presentation: Presentation) {
-        ApplicationManager.getApplication().invokeLater {
-            if (!project.isDisposed) {
-                updatePresentation(project, presentation)
-            }
+        ModalityUiUtil.invokeLaterIfNeeded(ModalityState.defaultModalityState()) {
+            updatePresentation(project, presentation)
         }
     }
     
-    /**
-     * Updates the presentation - called from queueUpdate
-     */
     private fun updatePresentation(project: Project, presentation: Presentation) {
         if (project.isDisposed) {
             return
         }
         
         ActivityTracker.getInstance().inc()
-        
-        // This will trigger update() to be called again
-        // which will update both presentation and custom component
     }
     
     private fun getToolbarForegroundColor(): Color {
@@ -395,13 +307,10 @@ class UnifiedDeviceSelectorAction : AnAction(), CustomComponentAction, DumbAware
     ) : AnAction(device.displayName, null, device.getIcon()) {
         
         override fun actionPerformed(e: AnActionEvent) {
-            // 只使用 DeviceService 管理设备选择，不使用 ExecutionTarget 系统
             DeviceService.getInstance(project).setSelectedDevice(device)
-            println("=== Device selected: ${device.displayName} ===")
+            println("Device selected: ${device.displayName}")
         }
         
-        override fun getActionUpdateThread(): ActionUpdateThread {
-            return ActionUpdateThread.BGT
-        }
+        override fun getActionUpdateThread() = ActionUpdateThread.BGT
     }
 }
