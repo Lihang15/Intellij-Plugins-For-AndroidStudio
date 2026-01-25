@@ -149,8 +149,9 @@
         </action>
         
         <!-- 最简单的工具栏设备选择器 - 直接添加到 MainToolBar -->
+        <!-- 使用 CustomComponentAction 支持自定义宽度 -->
         <action id="HarmonyOS.SimpleToolbarDeviceSelector"
-                class="org.jetbrains.plugins.template.device.SimpleToolbarDeviceSelectorAction"
+                class="org.jetbrains.plugins.template.device.WideToolbarDeviceSelectorAction"
                 description="HarmonyOS Device Selection"
                 icon="AllIcons.Debugger.ThreadRunning"
                 text="HarmonyOS Device">

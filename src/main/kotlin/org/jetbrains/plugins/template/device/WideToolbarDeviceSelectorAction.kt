@@ -2,26 +2,39 @@ package org.jetbrains.plugins.template.device
 
 import com.intellij.icons.AllIcons
 import com.intellij.ide.ActivityTracker
+import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.*
+import com.intellij.openapi.actionSystem.ex.CustomComponentAction
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.execution.RunManagerListener
 import com.intellij.execution.RunnerAndConfigurationSettings
+import com.intellij.ui.components.JBLabel
+import com.intellij.util.ui.JBUI
+import java.awt.BorderLayout
+import java.awt.Dimension
 import javax.swing.Icon
+import javax.swing.JButton
+import javax.swing.JComponent
+import javax.swing.JPanel
 
 /**
- * 最简单的工具栏设备选择器
- * 不使用 CustomComponentAction，只使用标准的 AnAction
- * 只在 MyMainApp 运行配置时显示
+ * 带自定义宽度的工具栏设备选择器
+ * 使用 CustomComponentAction 来完全控制组件的宽度
  */
-class SimpleToolbarDeviceSelectorAction : AnAction(), DumbAware {
+class WideToolbarDeviceSelectorAction : AnAction(), CustomComponentAction, DumbAware {
     
     private val knownProjects = mutableSetOf<Project>()
     
+    companion object {
+        private const val MIN_WIDTH = 250  // 最小宽度（像素）- 增加以显示更长的设备名
+        private const val MAX_WIDTH = 500  // 最大宽度（像素）- 增加以支持超长设备名
+    }
+    
     init {
-        println("=== SimpleToolbarDeviceSelectorAction INITIALIZED ===")
+        println("=== WideToolbarDeviceSelectorAction INITIALIZED ===")
     }
     
     override fun getActionUpdateThread(): ActionUpdateThread {
@@ -29,13 +42,95 @@ class SimpleToolbarDeviceSelectorAction : AnAction(), DumbAware {
     }
     
     override fun actionPerformed(e: AnActionEvent) {
-        println("=== SimpleToolbarDeviceSelectorAction.actionPerformed() ===")
+        println("=== WideToolbarDeviceSelectorAction.actionPerformed() ===")
         val project = e.project ?: return
         showDevicePopup(e.dataContext, e.getData(PlatformCoreDataKeys.CONTEXT_COMPONENT))
     }
     
+    override fun createCustomComponent(presentation: Presentation, place: String): JComponent {
+        println("=== createCustomComponent() ===")
+        
+        val iconLabel = JBLabel(AllIcons.Debugger.ThreadRunning)
+        val textLabel = JBLabel("Loading...")
+        val arrowLabel = JBLabel(AllIcons.General.ChevronDown)
+        
+        val button = object : JButton() {
+            override fun getPreferredSize(): Dimension {
+                // 使用更大的固定宽度，确保所有设备名都能完整显示
+                val fixedWidth = JBUI.scale(200)  // 固定 200 像素
+                val height = JBUI.scale(28)
+                
+                println("Fixed size: width=$fixedWidth, height=$height, text='${textLabel.text}'")
+                return Dimension(fixedWidth, height)
+            }
+            
+            override fun getMinimumSize(): Dimension {
+                return Dimension(JBUI.scale(MIN_WIDTH), JBUI.scale(28))
+            }
+            
+            override fun getMaximumSize(): Dimension {
+                return Dimension(JBUI.scale(MAX_WIDTH), JBUI.scale(28))
+            }
+        }
+        
+        button.layout = BorderLayout()
+        button.border = JBUI.Borders.empty(4, 8)
+        button.isOpaque = false
+        button.isContentAreaFilled = false
+        button.isBorderPainted = false
+        button.isFocusPainted = false
+        
+        val contentPanel = JPanel(BorderLayout(JBUI.scale(4), 0))
+        contentPanel.isOpaque = false
+        contentPanel.add(iconLabel, BorderLayout.WEST)
+        contentPanel.add(textLabel, BorderLayout.CENTER)
+        contentPanel.add(arrowLabel, BorderLayout.EAST)
+        
+        button.add(contentPanel, BorderLayout.CENTER)
+        
+        // 存储标签引用，用于后续更新
+        button.putClientProperty("iconLabel", iconLabel)
+        button.putClientProperty("textLabel", textLabel)
+        button.putClientProperty("arrowLabel", arrowLabel)
+        
+        // 点击事件
+        button.addActionListener {
+            val dataContext = DataManager.getInstance().getDataContext(button)
+            val project = CommonDataKeys.PROJECT.getData(dataContext)
+            if (project != null) {
+                showDevicePopup(dataContext, button)
+            }
+        }
+        
+        return button
+    }
+    
+    override fun updateCustomComponent(component: JComponent, presentation: Presentation) {
+        println("=== updateCustomComponent() ===")
+        
+        if (component !is JButton) return
+        
+        val iconLabel = component.getClientProperty("iconLabel") as? JBLabel ?: return
+        val textLabel = component.getClientProperty("textLabel") as? JBLabel ?: return
+        
+        // 更新图标和文本
+        iconLabel.icon = presentation.icon
+        textLabel.text = presentation.text ?: ""
+        
+        // 设置可见性
+        component.isVisible = presentation.isVisible
+        component.isEnabled = presentation.isEnabled
+        
+        // 强制重新计算大小
+        component.invalidate()
+        component.revalidate()
+        component.repaint()
+        
+        println("Updated component: text='${textLabel.text}', visible=${component.isVisible}")
+    }
+    
     override fun update(e: AnActionEvent) {
-        println("=== SimpleToolbarDeviceSelectorAction.update() ===")
+        println("=== WideToolbarDeviceSelectorAction.update() ===")
         
         val project = e.project
         if (project == null) {
@@ -108,10 +203,6 @@ class SimpleToolbarDeviceSelectorAction : AnAction(), DumbAware {
         e.presentation.text = text
         e.presentation.icon = icon
         e.presentation.description = "HarmonyOS Device: $text"
-        
-        // 设置最小宽度，确保文本完整显示
-        // 使用 putClientProperty 设置自定义属性
-        e.presentation.putClientProperty("ActionButton.minWidth", 250)
         
         println("Set: text='$text', icon=$icon, visible=true, enabled=true")
     }

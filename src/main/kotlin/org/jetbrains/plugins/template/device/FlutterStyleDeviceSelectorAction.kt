@@ -88,6 +88,21 @@ class FlutterStyleDeviceSelectorAction : AnAction(), CustomComponentAction, Dumb
                 }
                 super.paintComponent(g)
             }
+            
+            override fun getPreferredSize(): Dimension {
+                // 设置固定宽度，确保设备名称完整显示
+                val fixedWidth = JBUI.scale(200)  // 固定 200 像素
+                val height = JBUI.scale(28)
+                return Dimension(fixedWidth, height)
+            }
+            
+            override fun getMinimumSize(): Dimension {
+                return Dimension(JBUI.scale(200), JBUI.scale(28))
+            }
+            
+            override fun getMaximumSize(): Dimension {
+                return Dimension(JBUI.scale(400), JBUI.scale(28))
+            }
         }
         
         button.layout = BorderLayout()
