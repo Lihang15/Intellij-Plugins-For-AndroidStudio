@@ -2,17 +2,17 @@ package lsp.tim
 
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.startup.StartupActivity
+import com.intellij.openapi.startup.ProjectActivity
 import org.wso2.lsp4intellij.IntellijLanguageClient
 import org.wso2.lsp4intellij.client.languageserver.serverdefinition.RawCommandServerDefinition
 
-class TimStartupActivity : StartupActivity {
+class TimStartupActivity : ProjectActivity {
 
     companion object {
         private val LOG = Logger.getInstance(TimStartupActivity::class.java)
     }
 
-    override fun runActivity(project: Project) {
+    override suspend fun execute(project: Project) {
         LOG.info("[TimLSPClient] TimStartupActivity started: Initializing LSP server for .tim files")
 
         try {

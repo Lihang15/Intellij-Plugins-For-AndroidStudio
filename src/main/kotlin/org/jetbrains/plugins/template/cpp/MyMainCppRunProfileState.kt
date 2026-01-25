@@ -10,7 +10,6 @@ import com.intellij.execution.runners.ExecutionEnvironment
 import com.intellij.openapi.project.Project
 import org.jetbrains.plugins.template.device.DeviceService
 import org.jetbrains.plugins.template.device.HarmonyDevice
-import org.jetbrains.plugins.template.device.HarmonyExecutionTarget
 import java.io.File
 
 /**
@@ -24,23 +23,13 @@ class MyMainCppRunProfileState(
         val configuration = environment.runProfile as MyMainCppRunConfiguration
         val project = configuration.project
 
-        // 优先从 ExecutionTarget 获取设备（工具栏下拉菜单选择）
-        val selectedDevice: HarmonyDevice? = when (val target = environment.executionTarget) {
-            is HarmonyExecutionTarget -> {
-                println("使用工具栏下拉菜单选择的设备: ${target.displayName}")
-                target.getDevice()
-            }
-            else -> {
-                // 回退到 DeviceService 中的选中设备
-                println("ExecutionTarget 不是 HarmonyExecutionTarget，使用 DeviceService")
-                DeviceService.getInstance(project).getSelectedDevice()
-            }
-        }
+        // 从 DeviceService 获取选中的设备
+        val selectedDevice: HarmonyDevice? = DeviceService.getInstance(project).getSelectedDevice()
         
         if (selectedDevice == null) {
             throw ExecutionException(
                 "未选择 HarmonyOS 设备。\n" +
-                "请在工具栏设备下拉菜单中选择一个设备。"
+                "请在工具栏设备选择器中选择一个设备。"
             )
         }
         

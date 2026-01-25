@@ -28,136 +28,10 @@
                 description="Start lldb-_ and send initialize">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
-        
-        <!-- Test Device Action -->
-        <action
-                id="HarmonyOS.TestDevice"
-                class="org.jetbrains.plugins.template.device.TestDeviceAction"
-                text="Test HarmonyOS Device List"
-                description="Test device list retrieval">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>
-        
-        <!-- Force Init Test Action -->
-        <action
-                id="HarmonyOS.ForceInit"
-                class="org.jetbrains.plugins.template.device.ForceInitAction"
-                text="Force Init Test"
-                description="Force initialization test">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>
-        
-        <!-- Test ExecutionTarget Action -->
-        <action
-                id="HarmonyOS.TestExecutionTarget"
-                class="org.jetbrains.plugins.template.device.TestExecutionTargetAction"
-                text="Test ExecutionTarget"
-                description="Test ExecutionTarget functionality">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>
-        
-        <!-- Switch to HarmonyOS Device Action -->
-        <action
-                id="HarmonyOS.SwitchDevice"
-                class="org.jetbrains.plugins.template.device.SwitchToHarmonyDeviceAction"
-                text="Switch to HarmonyOS Device"
-                description="Switch to first HarmonyOS device">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>
-        
-        <!-- Diagnostic Action -->
-        <action
-                id="HarmonyOS.Diagnostic"
-                class="org.jetbrains.plugins.template.device.DiagnosticAction"
-                text="Diagnose Device Loading"
-                description="Check why device list is not loading">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>
-        
-        <!-- Manual Poll Action -->
-        <action
-                id="HarmonyOS.ManualPoll"
-                class="org.jetbrains.plugins.template.device.ManualPollAction"
-                text="Manual Device Poll"
-                description="Manually trigger device polling">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>
-        
-        <!-- Force Start Poller Action -->
-        <action
-                id="HarmonyOS.ForceStartPoller"
-                class="org.jetbrains.plugins.template.device.ForceStartPollerAction"
-                text="Force Start Poller"
-                description="Force start the device poller">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>
-        
-        <!-- Simple Test Action -->
-        <action
-                id="HarmonyOS.SimpleTest"
-                class="org.jetbrains.plugins.template.device.SimpleTestAction"
-                text="Simple Device Test"
-                description="Simple device test without reflection">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>
-        
-        <!-- Refresh UI Action -->
-        <action
-                id="HarmonyOS.RefreshUI"
-                class="org.jetbrains.plugins.template.device.RefreshUIAction"
-                text="Refresh Device UI"
-                description="Force refresh device selector UI">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>
-        
-        <!-- Show Device Selector Action -->
-        <action
-                id="HarmonyOS.ShowDeviceSelector"
-                class="org.jetbrains.plugins.template.device.ShowDeviceSelectorAction"
-                text="Show HarmonyOS Device Selector"
-                description="Show HarmonyOS device selection popup">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>
-        
-        <!-- Check Run Configuration Action -->
-        <action
-                id="HarmonyOS.CheckRunConfig"
-                class="org.jetbrains.plugins.template.device.CheckRunConfigAction"
-                text="Check Run Configuration"
-                description="Check current run configuration">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>
-        
-        <!-- List Run Configurations Action -->
-        <action
-                id="HarmonyOS.ListRunConfigs"
-                class="org.jetbrains.plugins.template.device.ListRunConfigsAction"
-                text="List All Run Configurations"
-                description="List all run configurations">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>
     </actions>
     
     <!-- HarmonyOS Device Selector in Toolbar (自定义设备选择器) -->
     <actions>
-        <!-- 测试工具栏 Action -->
-        <action id="HarmonyOS.TestToolbar"
-                class="org.jetbrains.plugins.template.device.TestToolbarAction"
-                description="Test Toolbar Action"
-                text="Test Toolbar">
-            <add-to-group group-id="MainToolBar" anchor="last"/>
-        </action>
-        
-        <!-- 最简单的工具栏设备选择器 - 直接添加到 MainToolBar -->
-        <!-- 使用 CustomComponentAction 支持自定义宽度 -->
-        <action id="HarmonyOS.SimpleToolbarDeviceSelector"
-                class="org.jetbrains.plugins.template.device.WideToolbarDeviceSelectorAction"
-                description="HarmonyOS Device Selection"
-                icon="AllIcons.Debugger.ThreadRunning"
-                text="HarmonyOS Device">
-            <add-to-group group-id="MainToolBar" anchor="last"/>
-        </action>
-        
         <!-- HarmonyOS Device Selector Group - 新 UI (2022.3+) -->
         <group id="HarmonyOS.MainToolbarActions">
             <action id="HarmonyOS.DeviceSelector"
@@ -179,6 +53,10 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="org.jetbrains.plugins.template.projectsync.MyProjectActivity" />
+        
+        <!-- Tim LSP Startup Activity (ProjectActivity API) -->
+        <postStartupActivity implementation="lsp.tim.TimStartupActivity" />
+        
          <!-- 注册项目级数据服务,项目打开后，sync一些数据，供插件代码全局使用 -->
             <projectService 
         serviceImplementation="org.jetbrains.plugins.template.projectsync.DataSyncService"/>
@@ -236,9 +114,6 @@
         <lang.syntaxHighlighterFactory
                 language="Tim"
                 implementationClass="lsp.tim.TimSyntaxHighlighterFactory"/>
-
-        <!-- Tim Startup Activity to Initialize LSP Server -->
-        <postStartupActivity implementation="lsp.tim.TimStartupActivity"/>
 
           <!-- Tim Diagnostic Monitor - For debugging LSP diagnostics -->
         <externalAnnotator id="TimDiagnosticMonitor"
