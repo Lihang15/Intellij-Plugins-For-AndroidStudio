@@ -12,6 +12,7 @@ import com.intellij.ide.fileTemplates.FileTemplateManager
 import com.intellij.ide.starters.local.GeneratorAsset
 import com.intellij.ide.starters.local.GeneratorEmptyDirectory
 import com.intellij.ide.starters.local.GeneratorTemplateFile
+import com.intellij.openapi.application.ApplicationManager
 import org.jetbrains.kotlin.idea.core.util.toVirtualFile
 import wizard.projectwizard.gradle.Versions
 import wizard.projectwizard.ProjectGenerationHelper
@@ -190,6 +191,19 @@ fun composeMultiplatformProjectRecipe(
             } catch (e: Exception) {
                 logger.error("Failed to generate asset: ${asset}", e)
                 filesSkipped++
+            }
+        }
+        
+        // Delete auto-generated app directory (created by Android Studio when category = Application)
+        val appDir = this.findChild("app")
+        if (appDir != null && appDir.exists()) {
+            ApplicationManager.getApplication().runWriteAction {
+                try {
+                    appDir.delete(this)
+                    logger.info("Deleted auto-generated app directory")
+                } catch (e: Exception) {
+                    logger.warn("Failed to delete app directory: ${e.message}")
+                }
             }
         }
         

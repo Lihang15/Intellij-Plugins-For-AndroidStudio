@@ -17,7 +17,7 @@ val composeMultiplatformTemplate = template {
         TemplateConstraint.AndroidX,
         TemplateConstraint.Kotlin
     )
-    category = Category.Application
+    category = Category.Other  // Changed from Application to prevent auto-creation of app/ directory
     formFactor = FormFactor.Mobile
     screens = listOf(WizardUiContext.NewProject, WizardUiContext.NewProjectExtraDetail)
 
