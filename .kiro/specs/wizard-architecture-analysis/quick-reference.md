@@ -10,12 +10,12 @@
 
 ### 1. 入口点
 ```
-plugin.xml → AndroidStudioTemplateProvider → CMPTemplate
+plugin.xml → AndroidStudioTemplateProvider → KMPTemplate
 ```
 
 ### 2. 配置流程
 ```
-用户填写 UI → CMPTemplate 参数 → CMPConfigModel → dataModel
+用户填写 UI → KMPTemplate 参数 → CMPConfigModel → dataModel
 ```
 
 ### 3. 生成流程
@@ -30,7 +30,7 @@ Recipe → FileGenerator → FreeMarker 模板 → 文件系统
 | 文件 | 作用 | 修改频率 |
 |------|------|----------|
 | `AndroidStudioTemplateProvider.kt` | 注册模板 | 低 |
-| `CMPTemplate.kt` | UI 配置 | 中 |
+| `KMPTemplate.kt` | UI 配置 | 中 |
 | `CMPConfigModel.kt` | 数据模型 | 中 |
 | `composeMultiplatformProjectRecipe.kt` | 生成逻辑 | 高 |
 | `CommonFileGenerator.kt` | 文件生成器 | 高 |
@@ -44,7 +44,7 @@ Recipe → FileGenerator → FreeMarker 模板 → 文件系统
 
 ### 场景 1: 添加新的库支持
 
-1. **CMPTemplate.kt**: 添加 `booleanParameter` 或 `enumParameter`
+1. **KMPTemplate.kt**: 添加 `booleanParameter` 或 `enumParameter`
 2. **CMPConfigModel.kt**: 添加对应的状态字段
 3. **Recipe**: 在 `dataModel` 中添加变量
 4. **模板文件**: 使用 `<#if IS_XXX_ENABLE>` 条件生成代码
@@ -176,7 +176,7 @@ FreeMarker 会抛出详细的错误信息，注意查看:
 
 ### 添加新参数
 ```
-src/main/kotlin/wizard/projectwizard/CMPTemplate.kt
+src/main/kotlin/wizard/projectwizard/KMPTemplate.kt
 ```
 
 ### 添加新状态
@@ -194,7 +194,7 @@ src/main/kotlin/wizard/projectwizard/recipes/composeMultiplatformProjectRecipe.k
 src/main/kotlin/wizard/projectwizard/cmparch/CommonFileGenerator.kt
 src/main/kotlin/wizard/projectwizard/cmparch/AndroidFileGenerator.kt
 src/main/kotlin/wizard/projectwizard/cmparch/IOSFileGenerator.kt
-src/main/kotlin/wizard/projectwizard/cmparch/DesktopFileGenerator.kt
+src/main/kotlin/wizard/projectwizard/cmparch/HarmonyFileGenerator.kt
 ```
 
 ### 修改模板
@@ -219,7 +219,7 @@ src/main/kotlin/wizard/projectwizard/cmparch/Template.kt
                    │
                    ▼
 ┌─────────────────────────────────────────────┐
-│          CMPTemplate.kt                     │
+│          KMPTemplate.kt                     │
 │  - 定义 UI 参数                              │
 │  - 定义 widgets                             │
 │  - 绑定 recipe                              │
@@ -242,7 +242,7 @@ src/main/kotlin/wizard/projectwizard/cmparch/Template.kt
 │  - CommonFileGenerator                      │
 │  - AndroidFileGenerator                     │
 │  - IOSFileGenerator                         │
-│  - DesktopFileGenerator                     │
+│  - HarmonyFileGenerator                     │
 └──────────────────┬──────────────────────────┘
                    │
                    ▼
@@ -270,7 +270,7 @@ src/main/kotlin/wizard/projectwizard/cmparch/Template.kt
 ```
 用户输入
     ↓
-CMPTemplate 参数 (booleanParameter, enumParameter, stringParameter)
+KMPTemplate 参数 (booleanParameter, enumParameter, stringParameter)
     ↓
 CMPConfigModel (状态对象)
     ↓
@@ -290,7 +290,7 @@ FreeMarker 处理模板
 ## 扩展点总结
 
 ### 1. 添加新的配置选项
-- **位置**: `CMPTemplate.kt`
+- **位置**: `KMPTemplate.kt`
 - **方法**: 添加 `booleanParameter` / `enumParameter` / `stringParameter`
 
 ### 2. 添加新的数据模型字段
@@ -372,7 +372,7 @@ FreeMarker 处理模板
 
 Wizard 系统的核心是：
 
-1. **配置层** (CMPTemplate): 定义用户可配置的选项
+1. **配置层** (KMPTemplate): 定义用户可配置的选项
 2. **数据层** (CMPConfigModel + dataModel): 存储和传递配置数据
 3. **生成层** (Recipe + FileGenerator): 根据配置生成文件列表
 4. **模板层** (FreeMarker): 根据变量生成实际文件内容

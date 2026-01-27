@@ -78,7 +78,7 @@ val platforms: List<FileGenerator> = listOfNotNull(
     CommonFileGenerator(config, dataModel, this),
     if (config.isAndroidEnable) AndroidFileGenerator(config) else null,
     if (config.isIOSEnable) IOSFileGenerator(config) else null,
-    if (config.isDesktopEnable) DesktopFileGenerator(config) else null,
+    if (config.isHarmonyEnable) HarmonyFileGenerator(config) else null,
 )
 ```
 
@@ -98,7 +98,7 @@ platforms: List<FileGenerator>
     ├─ IOSFileGenerator (条件: isIOSEnable)
     │   └─ params: CMPConfigModel
     │
-    └─ DesktopFileGenerator (条件: isDesktopEnable)
+    └─ HarmonyFileGenerator (条件: isHarmonyEnable)
         └─ params: CMPConfigModel
 ```
 
@@ -138,7 +138,7 @@ abstract class FileGenerator(protected val params: CMPConfigModel) {
 - `CommonFileGenerator`: 生成通用文件 (Gradle 配置、共享代码)
 - `AndroidFileGenerator`: 生成 Android 特定文件
 - `IOSFileGenerator`: 生成 iOS 特定文件
-- `DesktopFileGenerator`: 生成 Desktop 特定文件
+- `HarmonyFileGenerator`: 生成 Desktop 特定文件
 
 ---
 
@@ -165,7 +165,7 @@ platforms.flatMap { it.generate(...) }
     ├─ IOSFileGenerator.generate()
     │   └─ 返回 List<GeneratorAsset> (11 个)
     │
-    └─ DesktopFileGenerator.generate()
+    └─ HarmonyFileGenerator.generate()
         └─ 返回 List<GeneratorAsset> (1 个)
     │
     ↓ flatMap 合并所有列表
@@ -280,7 +280,7 @@ assets: List<GeneratorAsset>
     ├─ CommonFileGenerator
     ├─ AndroidFileGenerator (条件)
     ├─ IOSFileGenerator (条件)
-    └─ DesktopFileGenerator (条件)
+    └─ HarmonyFileGenerator (条件)
     │
     ↓
 2. 调用每个 generator.generate()
@@ -334,7 +334,7 @@ val platforms = listOfNotNull(
     CommonFileGenerator(...),      // 总是创建
     AndroidFileGenerator(...),     // isAndroidEnable = true
     IOSFileGenerator(...),         // isIOSEnable = true
-    null                           // isDesktopEnable = false
+    null                           // isHarmonyEnable = false
 )
 // platforms.size = 3
 
@@ -409,7 +409,7 @@ val template = ftManager.getCodeTemplate("common_app.kt")
 class CMPConfigModel {
     var isAndroidEnable: Boolean
     var isIOSEnable: Boolean
-    var isDesktopEnable: Boolean
+    var isHarmonyEnable: Boolean
     var selectedNetworkLibrary: CMPNetworkLibrary
     var isKoinEnable: Boolean
     var isNavigationEnable: Boolean
@@ -434,7 +434,7 @@ FileGenerator (抽象类)
     ├─ IOSFileGenerator
     │   └─ generate() → List<GeneratorAsset>
     │
-    └─ DesktopFileGenerator
+    └─ HarmonyFileGenerator
         └─ generate() → List<GeneratorAsset>
 
 GeneratorAsset (接口/抽象类)

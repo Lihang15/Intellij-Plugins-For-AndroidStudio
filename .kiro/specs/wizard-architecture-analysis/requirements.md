@@ -23,7 +23,7 @@ class AndroidStudioTemplateProvider : WizardTemplateProvider() {
 
 ### 1.2 模板定义
 
-**文件**: `CMPTemplate.kt`
+**文件**: `KMPTemplate.kt`
 - **作用**: 定义项目向导的 UI 界面和配置参数
 - **核心内容**:
   - 向导基本信息（名称、描述、分类）
@@ -35,7 +35,7 @@ class AndroidStudioTemplateProvider : WizardTemplateProvider() {
 
 ## 2. 核心组件详解
 
-### 2.1 配置参数 (CMPTemplate.kt)
+### 2.1 配置参数 (KMPTemplate.kt)
 
 向导提供以下可配置选项：
 
@@ -43,7 +43,7 @@ class AndroidStudioTemplateProvider : WizardTemplateProvider() {
 |--------|------|--------|------|
 | `isAndroidEnable` | Boolean | true | 是否启用 Android 平台 |
 | `isIosEnable` | Boolean | true | 是否启用 iOS 平台 |
-| `isDesktopEnable` | Boolean | false | 是否启用 Desktop 平台 |
+| `isHarmonyEnable` | Boolean | false | 是否启用 Desktop 平台 |
 | `selectedNetworkLibrary` | Enum | None | 网络库选择 (Ktor/Ktorfit/None) |
 | `selectedImageLibrary` | Enum | None | 图片库选择 (Coil/Kamel/None) |
 | `isKoinEnable` | Boolean | false | 是否启用 Koin 依赖注入 |
@@ -88,7 +88,7 @@ abstract class FileGenerator(protected val params: CMPConfigModel) {
 - `CommonFileGenerator`: 生成通用文件（Gradle 配置、共享代码等）
 - `AndroidFileGenerator`: 生成 Android 特定文件
 - `IOSFileGenerator`: 生成 iOS 特定文件
-- `DesktopFileGenerator`: 生成 Desktop 特定文件
+- `HarmonyFileGenerator`: 生成 Desktop 特定文件
 
 ### 3.2 CommonFileGenerator 详解
 
@@ -125,7 +125,7 @@ abstract class FileGenerator(protected val params: CMPConfigModel) {
     ↓
 IDE 调用 AndroidStudioTemplateProvider.getTemplates()
     ↓
-返回 composeMultiplatformTemplate (CMPTemplate.kt)
+返回 composeMultiplatformTemplate (KMPTemplate.kt)
     ↓
 IDE 显示向导 UI（根据 widgets 定义）
     ↓
@@ -149,7 +149,7 @@ IDE 显示向导 UI（根据 widgets 定义）
    - CommonFileGenerator (必需)
    - AndroidFileGenerator (条件)
    - IOSFileGenerator (条件)
-   - DesktopFileGenerator (条件)
+   - HarmonyFileGenerator (条件)
     ↓
 5. 调用每个生成器的 generate() 方法
    - 返回 GeneratorAsset 列表
@@ -201,7 +201,7 @@ IDE 显示向导 UI（根据 widgets 定义）
 ```
 用户输入
     ↓
-CMPTemplate 参数
+KMPTemplate 参数
     ↓
 CMPConfigModel (配置对象)
     ↓
@@ -228,7 +228,7 @@ FreeMarker 模板处理
 
 ### 7.2 添加新库支持
 
-1. 在 `CMPTemplate.kt` 中添加新参数
+1. 在 `KMPTemplate.kt` 中添加新参数
 2. 在 `CMPConfigModel.kt` 中添加状态字段
 3. 在 `dataModel` 中添加对应变量
 4. 在 `CommonFileGenerator` 中添加条件生成逻辑
@@ -272,7 +272,7 @@ FreeMarker 模板处理
 
 **文件**: `gradle/Versions.kt`
 - 从远程获取最新版本号
-- 在 `CMPTemplate.kt` 中通过 `runBlocking` 预加载
+- 在 `KMPTemplate.kt` 中通过 `runBlocking` 预加载
 - 存储在 `Versions.versionList` Map 中
 
 ---
@@ -367,7 +367,7 @@ class MyProjectActivity : StartupActivity {
 
 整个 Wizard 系统采用了清晰的分层架构：
 
-1. **表现层**: CMPTemplate (UI 定义)
+1. **表现层**: KMPTemplate (UI 定义)
 2. **控制层**: Recipe (业务逻辑)
 3. **生成层**: FileGenerator (文件生成)
 4. **工具层**: Utils, ProjectGenerationHelper (基础设施)

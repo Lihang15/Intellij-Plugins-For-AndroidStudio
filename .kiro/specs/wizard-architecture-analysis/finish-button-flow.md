@@ -51,7 +51,7 @@ composeMultiplatformProjectRecipe()
 
 ### 2.1 Recipe 回调（我们的代码）
 
-**位置**: `CMPTemplate.kt`
+**位置**: `KMPTemplate.kt`
 
 ```kotlin
 recipe = { data: TemplateData ->
@@ -487,7 +487,7 @@ fun composeMultiplatformProjectRecipe(...) {
 
 | API | 用途 | 位置 |
 |-----|------|------|
-| `recipe = { ... }` | Recipe 回调 | CMPTemplate.kt |
+| `recipe = { ... }` | Recipe 回调 | KMPTemplate.kt |
 | `Utils.showInfo()` | 显示通知 | Utils.kt |
 | `ProgressManager` | 进度管理 | IntelliJ Platform |
 | `ProjectManager` | 项目管理 | IntelliJ Platform |

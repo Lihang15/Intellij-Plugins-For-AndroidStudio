@@ -24,4 +24,15 @@ object Template {
     const val IOS_PREVIEW_CONTENTS_JSON = "preview_contents.json"
     const val IOS_INFO_PLIST = "info.plist"
     const val MY_MAIN_CPP = "my_main.cpp"
+
+    const val GIT_IGNORE = ".gitignore"
+    const val BUILD_PROFILE_JSON5 = "build-profile.json5"
+    const val CODE_LINTER_JSON5 = "code-linter.json5"
+    const val  HVIGORFILE =  "hvigorfile.ts"
+    const val OH_PACKAGE_LOCK_JSON5 = "oh-package-lock.json5"
+    const val OH_PACKAGE_JSON5 = "oh-package.json5"
+    
+    const val APP_JSON5 = "app.json5"
+    const val STRING_JSON = "string.json"
+    const val LAYERED_IMAGE = "layered_image.json"
 }

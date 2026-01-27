@@ -9,18 +9,19 @@ import wizard.projectwizard.cmparch.*
 import com.intellij.ide.fileTemplates.FileTemplateManager
 import com.intellij.ide.starters.local.GeneratorAsset
 import com.intellij.ide.starters.local.GeneratorEmptyDirectory
+import com.intellij.ide.starters.local.GeneratorResourceFile
 import com.intellij.ide.starters.local.GeneratorTemplateFile
 import com.intellij.openapi.application.ApplicationManager
 import org.jetbrains.kotlin.idea.core.util.toVirtualFile
 import wizard.projectwizard.ProjectGenerationHelper
 import com.intellij.openapi.diagnostic.thisLogger
 
-fun composeMultiplatformProjectRecipe(
+fun kotlinMultiplatformProjectRecipe(
     moduleData: ModuleTemplateData,
     packageName: String,
     isAndroidEnable: Boolean,
     isIosEnable: Boolean,
-    isDesktopEnable: Boolean,
+    isHarmonyEnable: Boolean,
 ) {
     val analyticsService = AnalyticsService.getInstance()
     val (projectData, _, _) = moduleData
@@ -29,7 +30,7 @@ fun composeMultiplatformProjectRecipe(
     val config = CMPConfigModel().apply {
         this.isAndroidEnable = isAndroidEnable
         this.isIOSEnable = isIosEnable
-        this.isDesktopEnable = isDesktopEnable
+        this.isHarmonyEnable = isHarmonyEnable
         this.packageName = packagePath
     }
     
@@ -48,7 +49,7 @@ fun composeMultiplatformProjectRecipe(
         "JVM_JAVA_Versions" to "\${System.getProperty(\"java.Versions\")}",
         "IS_ANDROID_ENABLE" to config.isAndroidEnable,
         "IS_IOS_ENABLE" to config.isIOSEnable,
-        "IS_DESKTOP_ENABLE" to config.isDesktopEnable,
+        "IS_DESKTOP_ENABLE" to config.isHarmonyEnable,
         "CMP_AGP" to "8.5.2",
         "CMP_KOTLIN" to "2.1.0",
         "CMP_ACTIVITY_COMPOSE" to "1.9.3",
@@ -66,7 +67,7 @@ fun composeMultiplatformProjectRecipe(
             CommonFileGenerator(config, dataModel, this),
             if (config.isAndroidEnable) AndroidFileGenerator(config) else null,
             if (config.isIOSEnable) IOSFileGenerator(config) else null,
-            if (config.isDesktopEnable) DesktopFileGenerator(config) else null,
+            if (config.isHarmonyEnable) HarmonyFileGenerator(config) else null,
         )
         assets.addAll(platforms.flatMap { it.generate(fileTemplateManager, config.packageName) })
         
@@ -84,6 +85,11 @@ fun composeMultiplatformProjectRecipe(
                     is GeneratorTemplateFile -> {
                         // Use Utils but it will internally handle conflicts better now
                         Utils.generateFileFromTemplate(dataModel, this, asset)
+                        filesCreated++
+                    }
+                    is GeneratorResourceFile -> {
+                        // Copy static resource files (images, etc.)
+                        Utils.copyResourceFile(this, asset)
                         filesCreated++
                     }
                     else -> {
@@ -117,7 +123,7 @@ fun composeMultiplatformProjectRecipe(
 
     Utils.showInfo(
         title = "Quick Project Wizard",
-        message = "Your project is ready! 🚀 If you like the plugin, please comment and rate it on the plugin page. 🙏",
+        message = "Your project is ready! If you like the plugin, please comment and rate it on the plugin page.",
     )
 }
 

@@ -3,9 +3,9 @@ package wizard.projectwizard
 import com.android.tools.idea.wizard.template.*
 import com.android.tools.idea.wizard.template.impl.defaultPackageNameParameter
 import wizard.common.getImage
-import wizard.projectwizard.recipes.composeMultiplatformProjectRecipe
+import wizard.projectwizard.recipes.kotlinMultiplatformProjectRecipe
 
-val composeMultiplatformTemplate = template {
+val kotlinMultiplatformTemplate = template {
     name = "ProjectWizard - KMP"
     description = "Generate a Kotlin Multiplatform project"
     minApi = 23
@@ -44,15 +44,15 @@ val composeMultiplatformTemplate = template {
         PackageNameWidget(defaultPackageNameParameter)
     )
 
-    thumb = { getImage("CMPTemplate", "test") }
+    thumb = { getImage("KMPTemplate", "test") }
 
     recipe = { data: TemplateData ->
-        composeMultiplatformProjectRecipe(
+        kotlinMultiplatformProjectRecipe(
             moduleData = data as ModuleTemplateData,
             packageName = data.packageName,
             isAndroidEnable = isAndroidEnable.value,
             isIosEnable = isIosEnable.value,
-            isDesktopEnable = true,
+            isHarmonyEnable = true,
         )
     }
 }

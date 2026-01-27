@@ -52,7 +52,7 @@
 - `StringBuilder.addAndroidBlock()`
 
 **保留的函数**:
-- ✅ `getImage()` - 被 CMPTemplate.kt 使用
+- ✅ `getImage()` - 被 KMPTemplate.kt 使用
 
 **原因**: 这些函数只被已删除的 GradleKts.kt 使用。
 
@@ -61,7 +61,7 @@
 ## 保留的文件（正在使用）
 
 ### 核心模板文件
-- ✅ `CMPTemplate.kt` - 模板定义
+- ✅ `KMPTemplate.kt` - 模板定义
 - ✅ `AndroidStudioTemplateProvider.kt` - 模板提供者
 - ✅ `ProjectGenerationHelper.kt` - 项目生成辅助类
 
@@ -73,7 +73,7 @@
 - ✅ `CommonFileGenerator.kt` - 通用文件生成器
 - ✅ `AndroidFileGenerator.kt` - Android 文件生成器
 - ✅ `IOSFileGenerator.kt` - iOS 文件生成器
-- ✅ `DesktopFileGenerator.kt` - Desktop 文件生成器
+- ✅ `HarmonyFileGenerator.kt` - Desktop 文件生成器
 - ✅ `Template.kt` - 模板常量定义
 
 ### Data 类
@@ -86,7 +86,7 @@
 
 ### Gradle 相关
 - ✅ `Version.kt` - 版本管理（被 recipe 使用）
-- ✅ `gradle/network/GetVersions.kt` - 版本获取（被 CMPTemplate 使用）
+- ✅ `gradle/network/GetVersions.kt` - 版本获取（被 KMPTemplate 使用）
 
 ### 工具类
 - ✅ `Utils.kt` - 工具函数（被 recipe 使用）
@@ -104,13 +104,13 @@ src/main/kotlin/wizard/
 │
 └── projectwizard/
     ├── AndroidStudioTemplateProvider.kt  ✅
-    ├── CMPTemplate.kt                    ✅
+    ├── KMPTemplate.kt                    ✅
     ├── ProjectGenerationHelper.kt        ✅
     │
     ├── cmparch/
     │   ├── AndroidFileGenerator.kt       ✅
     │   ├── CommonFileGenerator.kt        ✅
-    │   ├── DesktopFileGenerator.kt       ✅
+    │   ├── HarmonyFileGenerator.kt       ✅
     │   ├── FileGenerator.kt              ✅
     │   ├── IOSFileGenerator.kt           ✅
     │   └── Template.kt                   ✅

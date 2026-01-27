@@ -28,7 +28,7 @@
 
 ### 1. 初始化时机
 
-**在 CMPTemplate.kt 中**:
+**在 KMPTemplate.kt 中**:
 ```kotlin
 val composeMultiplatformTemplate = template {
     name = "ProjectWizard - KMP"
@@ -58,7 +58,7 @@ val composeMultiplatformTemplate = template {
 ```
 用户打开 Wizard
     ↓
-CMPTemplate 初始化
+KMPTemplate 初始化
     ↓
 runBlocking { getVersions() }
     ↓

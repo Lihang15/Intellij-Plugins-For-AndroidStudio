@@ -26,7 +26,7 @@
                         │
                         ▼
         ┌───────────────────────────────┐
-        │    CMPTemplate.kt             │
+        │    KMPTemplate.kt             │
         │  (模板定义 + UI 配置)          │
         └───────────────┬───────────────┘
                         │
@@ -61,7 +61,7 @@
  │                  │  getTemplates()  │                │                │                │               │
  │                  ├─────────────────>│                │                │                │               │
  │                  │                  │  return        │                │                │               │
- │                  │                  │  [CMPTemplate] │                │                │               │
+ │                  │                  │  [KMPTemplate] │                │                │               │
  │                  │<─────────────────┤                │                │                │               │
  │                  │                  │                │                │                │               │
  │  <显示向导 UI>    │                  │                │                │                │               │
@@ -115,7 +115,7 @@ composeMultiplatformProjectRecipe()
     │   └─ CMPConfigModel
     │       ├─ isAndroidEnable
     │       ├─ isIOSEnable
-    │       ├─ isDesktopEnable
+    │       ├─ isHarmonyEnable
     │       ├─ selectedNetworkLibrary
     │       ├─ isKoinEnable
     │       ├─ isNavigationEnable
@@ -135,7 +135,7 @@ composeMultiplatformProjectRecipe()
     │   ├─ CommonFileGenerator (必需)
     │   ├─ AndroidFileGenerator (条件)
     │   ├─ IOSFileGenerator (条件)
-    │   └─ DesktopFileGenerator (条件)
+    │   └─ HarmonyFileGenerator (条件)
     │
     ├─ 5. 生成文件资产
     │   └─ platforms.flatMap { it.generate() }
@@ -263,7 +263,7 @@ Utils.generateFileFromTemplate()
          │
          ▼
 ┌─────────────────┐
-│  CMPTemplate    │
+│  KMPTemplate    │
 │  参数对象        │
 │  - booleanParam │
 │  - enumParam    │
@@ -348,7 +348,7 @@ Recipe 执行
     ├─ 选择了哪些平台?
     │   ├─ Android → 添加 AndroidFileGenerator
     │   ├─ iOS     → 添加 IOSFileGenerator
-    │   └─ Desktop → 添加 DesktopFileGenerator
+    │   └─ Desktop → 添加 HarmonyFileGenerator
     │
     └─ 屏幕列表
         ├─ 为每个屏幕生成:
@@ -404,7 +404,7 @@ Recipe
 整个 Wizard 系统的调用流程可以概括为：
 
 1. **注册阶段**: plugin.xml → AndroidStudioTemplateProvider
-2. **配置阶段**: CMPTemplate → 用户填写配置
+2. **配置阶段**: KMPTemplate → 用户填写配置
 3. **生成阶段**: Recipe → FileGenerator → Utils
 4. **模板阶段**: FreeMarker → 文件系统
 5. **完成阶段**: VFS 刷新 → 通知用户

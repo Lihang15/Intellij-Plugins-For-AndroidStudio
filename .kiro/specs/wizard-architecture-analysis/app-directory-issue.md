@@ -10,7 +10,7 @@
 
 **Android Studio 框架自动创建的！**
 
-在 `CMPTemplate.kt` 中有这两行配置：
+在 `KMPTemplate.kt` 中有这两行配置：
 
 ```kotlin
 val composeMultiplatformTemplate = template {
@@ -185,7 +185,7 @@ include(":composeApp")
 
 **实现代码**:
 
-**1. 修改 CMPTemplate.kt**:
+**1. 修改 KMPTemplate.kt**:
 ```kotlin
 val composeMultiplatformTemplate = template {
     name = "ProjectWizard - KMP"
@@ -297,7 +297,7 @@ Android Studio 模板系统支持的 Category：
 
 ### 需要修改的文件
 
-1. **CMPTemplate.kt** (第 20 行)
+1. **KMPTemplate.kt** (第 20 行)
    ```kotlin
    category = Category.Other  // 改这里
    ```

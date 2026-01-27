@@ -9,7 +9,7 @@ import com.android.tools.idea.wizard.model.WizardModel
 class CMPConfigModel : WizardModel() {
     var isAndroidEnable: Boolean by mutableStateOf(false)
     var isIOSEnable: Boolean by mutableStateOf(false)
-    var isDesktopEnable: Boolean by mutableStateOf(false)
+    var isHarmonyEnable: Boolean by mutableStateOf(false)
     var packageName by mutableStateOf("")
 
     override fun handleFinished() = Unit

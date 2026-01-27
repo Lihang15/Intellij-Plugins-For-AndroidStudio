@@ -66,7 +66,7 @@
 
 ### 1. 核心配置文件
 
-#### `CMPTemplate.kt`
+#### `KMPTemplate.kt`
 **修改内容**:
 - ✅ 删除 `selectedNetworkLibrary` 参数定义
 - ✅ 删除 `selectedImageLibrary` 参数定义
@@ -92,7 +92,7 @@
 **保留字段**:
 - `isAndroidEnable`
 - `isIOSEnable`
-- `isDesktopEnable`
+- `isHarmonyEnable`
 - `packageName`
 
 #### `composeMultiplatformProjectRecipe.kt`

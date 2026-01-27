@@ -1,5 +1,6 @@
 package wizard.common
 
+import com.intellij.ide.starters.local.GeneratorResourceFile
 import com.intellij.ide.starters.local.GeneratorTemplateFile
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
@@ -31,6 +32,26 @@ object Utils {
                 getTemplate("${template}.ft").process(dataModel, writer)
                 VfsUtil.saveText(outputFile, writer.toString())
             }
+        }
+    }
+
+    fun copyResourceFile(
+        outputDir: VirtualFile,
+        asset: GeneratorResourceFile,
+    ) {
+        val outputFilePathParts = asset.relativePath.split('/')
+        val dirPath = outputFilePathParts.dropLast(1).joinToString("/")
+        val targetDir = VfsUtil.createDirectoryIfMissing(outputDir, dirPath)
+            ?: throw IOException("Failed to create directory: $dirPath")
+        val outputFile = targetDir.createChildData(this, outputFilePathParts.last())
+        
+        // 从 resources 目录读取文件并复制
+        val resourceUrl = asset.resource
+        val inputStream = resourceUrl.openStream()
+            ?: throw IOException("Resource not found: $resourceUrl")
+        
+        inputStream.use { input ->
+            outputFile.setBinaryContent(input.readBytes())
         }
     }
 

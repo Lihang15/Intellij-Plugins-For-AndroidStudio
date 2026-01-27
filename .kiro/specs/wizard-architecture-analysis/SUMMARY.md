@@ -22,7 +22,7 @@
 
 #### 1. 我们的代码（可以控制）
 
-**Recipe 回调** - `CMPTemplate.kt`:
+**Recipe 回调** - `KMPTemplate.kt`:
 ```kotlin
 recipe = { data: TemplateData ->
     composeMultiplatformProjectRecipe(...)  // ← 这个方法

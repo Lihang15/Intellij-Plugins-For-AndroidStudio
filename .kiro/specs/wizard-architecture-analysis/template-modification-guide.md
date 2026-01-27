@@ -569,7 +569,7 @@ println("DataModel: $dataModel")
 
 ### 场景: 添加 SQLDelight 支持
 
-**步骤 1: 在 CMPTemplate.kt 中添加参数**
+**步骤 1: 在 KMPTemplate.kt 中添加参数**
 
 ```kotlin
 val isSQLDelightEnable = booleanParameter {
