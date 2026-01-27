@@ -1,7 +1,0 @@
-package ${PACKAGE_NAME}.navigation
-
-import kotlinx.serialization.Serializable
-
-sealed interface Screen {
-${NAVIGATION_SCREENS}
-}

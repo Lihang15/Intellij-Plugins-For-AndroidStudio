@@ -1,3 +1,0 @@
-package ${PACKAGE_NAME}.domain.repository
-
-interface MainRepository

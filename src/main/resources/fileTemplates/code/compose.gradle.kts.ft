@@ -7,13 +7,6 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
-    alias(libs.plugins.kotlinxSerialization)
-<#if IS_KOIN_ENABLE || IS_KTORFIT_ENABLE || IS_ROOM_ENABLE>
-    alias(libs.plugins.ksp)
-</#if>
-<#if IS_ROOM_ENABLE>
-    alias(libs.plugins.room.plugin)
-</#if>
 }
 
 kotlin {
@@ -36,17 +29,9 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
-<#if IS_ROOM_ENABLE>
-            linkerOpts.add("-lsqlite3")
-</#if>
         }
     }
 
-    <#if IS_ROOM_ENABLE>
-    sourceSets.commonMain {
-        kotlin.srcDir("build/generated/ksp/metadata")
-    }
-    </#if>
     sourceSets {
 <#if IS_DESKTOP_ENABLE>
         val desktopMain by getting
@@ -57,9 +42,6 @@ kotlin {
             implementation(libs.androidx.compose.ui.tooling.preview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.kotlinx.coroutines.android)
-            <#if IS_KTOR_ENABLE>
-            implementation(libs.ktor.client.okhttp)
-            </#if>
         }
         </#if>
         commonMain.dependencies {
@@ -71,50 +53,11 @@ kotlin {
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.kotlinx.serialization)
-            <#if IS_KTOR_ENABLE>
-            implementation(libs.ktor.client.core)
-            </#if>
-            <#if IS_KTORFIT_ENABLE>
-            implementation(libs.ktorfit)
-            </#if>
-            <#if IS_KTOR_ENABLE || IS_KTORFIT_ENABLE>
-            implementation(libs.ktor.client.content.negotiation)
-            implementation(libs.ktor.serialization.kotlinx.json)
-            </#if>
-            <#if IS_KOIN_ENABLE>
-            implementation(libs.koin.core)
-            implementation(libs.koin.compose.viewmodel)
-            </#if>
-            <#if IS_NAVIGATION_ENABLE>
-            implementation(libs.navigation.compose)
-            </#if>
-            <#if IS_COIL_ENABLE>
-            implementation(libs.coil)
-            </#if>
-            <#if IS_KAMEL_ENABLE>
-            implementation(libs.kamel)
-            </#if>
-            <#if IS_ROOM_ENABLE>
-            implementation(libs.room.runtime)
-            implementation(libs.room.compiler)
-            implementation(libs.sqlite.bundled)
-            </#if>
         }
-        <#if IS_IOS_ENABLE>
-        iosMain.dependencies {
-        <#if IS_KTOR_ENABLE>
-            implementation(libs.ktor.client.darwin)
-        </#if>
-        }
-        </#if>
         <#if IS_DESKTOP_ENABLE>
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
-            <#if IS_KTOR_ENABLE>
-            implementation(libs.ktor.client.engine)
-            </#if>
         }
         </#if>
     }
@@ -161,22 +104,6 @@ compose.desktop {
             packageName = "${PACKAGE_NAME}"
             packageVersion = "1.0.0"
         }
-    }
-}
-</#if>
-
-<#if IS_ROOM_ENABLE>
-dependencies {
-    add("kspCommonMainMetadata", libs.room.compiler)
-}
-
-room {
-    schemaDirectory("$projectDir/schemas")
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<*>>().configureEach {
-    if (name != "kspCommonMainKotlinMetadata" ) {
-        dependsOn("kspCommonMainKotlinMetadata")
     }
 }
 </#if>

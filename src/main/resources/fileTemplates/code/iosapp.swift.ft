@@ -3,11 +3,6 @@ import SwiftUI
 
 @main
 struct iOSApp: App {
-<#if IS_KOIN_ENABLE>
-    init() {
-        AppModuleKt.doInitKoin()
-    }
-</#if>
     var body: some Scene {
         WindowGroup {
             ContentView()
