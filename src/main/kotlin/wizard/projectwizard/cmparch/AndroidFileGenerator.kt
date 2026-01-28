@@ -13,6 +13,11 @@ class AndroidFileGenerator(params: CMPConfigModel) : FileGenerator(params) {
                 ftManager.getCodeTemplate(Template.ANDROID_MAIN_ACTIVITY)
             ),
             GeneratorTemplateFile(
+                "composeApp/src/androidMain/kotlin/$packageName/Platform.android.kt",
+                ftManager.getCodeTemplate(Template.PLATFORM_ANDROID)
+            ),
+
+            GeneratorTemplateFile(
                 "composeApp/src/androidMain/AndroidManifest.xml",
                 ftManager.getCodeTemplate(Template.ANDROID_MANIFEST)
             ),
