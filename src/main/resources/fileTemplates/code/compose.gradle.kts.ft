@@ -132,11 +132,11 @@ Android 构建工具 → 打包成 APK
 控制 APK 生成、打包、签名等
  */
 android {
-    namespace = "com.example.kmptpc_compose_sample"                      // 设置包名
+    namespace = "${PACKAGE_NAME}"                      // 设置包名
     compileSdk = libs.versions.android.compileSdk.get().toInt()  // 指定编译SDK版本
 
     defaultConfig {
-        applicationId = "com.example.kmptpc_compose_sample"                   // 应用ID
+        applicationId = "${PACKAGE_NAME}"                   // 应用ID
         minSdk = libs.versions.android.minSdk.get().toInt()     // 最低SDK版本
         targetSdk = libs.versions.android.targetSdk.get().toInt()// 目标SDK版本
         versionCode = 1                                         // 应用版本号

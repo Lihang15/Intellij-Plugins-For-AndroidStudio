@@ -1,0 +1,194 @@
+package ${PACKAGE_NAME}
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import ${PACKAGE_NAME}.navigation.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import ${PACKAGE_NAME}.demos.material.*
+import ${PACKAGE_NAME}.demos.ui.UiBoxDemo
+import ${PACKAGE_NAME}.demos.benchmark.*
+import ${PACKAGE_NAME}.demos.foundation.FoundationBasicTextDemo
+import ${PACKAGE_NAME}.demos.foundation.FoundationLazyColumnDemo
+
+@Composable
+internal fun HomeScreen(
+    onSelect: (${PACKAGE_NAME}.navigation.ComponentDemo) -> Unit,
+    listState: androidx.compose.foundation.lazy.LazyListState,
+    searchQuery: String,
+    onSearchChange: (String) -> Unit,
+    expandedGroups: MutableMap<${PACKAGE_NAME}.navigation.ComposeGroup, Boolean>
+) {
+    val grouped = ${PACKAGE_NAME}.navigation.demosByGroup()
+    val filtered = grouped.mapValues { (_, demos) ->
+        if (searchQuery.isBlank()) demos
+        else demos.filter { d ->
+            d.title.contains(searchQuery, ignoreCase = true) ||
+            d.id.contains(searchQuery, ignoreCase = true)
+        }
+    }.filterValues { it.isNotEmpty() || searchQuery.isBlank() }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 8.dp)
+    ) {
+        // 顶部固定搜索框（避免 iOS LazyColumn 首项兼容性问题）
+        Card(backgroundColor = MaterialTheme.colors.surface) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchChange,
+                label = { Text("搜索") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                singleLine = true
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        androidx.compose.foundation.lazy.LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            state = listState,
+            contentPadding = PaddingValues(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            ${PACKAGE_NAME}.navigation.ComposeGroup.entries.forEach { group ->
+                val demos = filtered[group] ?: emptyList()
+                if (demos.isEmpty() && searchQuery.isNotBlank()) {
+                    // 搜索无结果时该组隐藏
+                } else {
+                    val expanded = expandedGroups[group] != false
+
+                    item {
+                        Card(
+                            backgroundColor = Color.LightGray.copy(alpha = 0.3f), // surfaceVariant replacement
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { expandedGroups[group] = !expanded }
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column {
+                                    Text(
+                                        ${PACKAGE_NAME}.navigation.groupTitles[group] ?: group.name,
+                                        style = MaterialTheme.typography.h6
+                                    )
+                                    val countText =
+                                        if (searchQuery.isNotBlank()) "匹配：${demos.size}" else "共 ${demos.size} 项"
+                                    Text(countText, style = MaterialTheme.typography.caption)
+                                }
+                                Text(
+                                    text = if (expanded) "收起 ▾" else "展开 ▸",
+                                    color = MaterialTheme.colors.primary
+                                )
+                            }
+                        }
+                    }
+
+                    if (expanded) {
+                        items(demos) { demo ->
+                            Card(backgroundColor = MaterialTheme.colors.surface) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onSelect(demo) }
+                                        .padding(16.dp), // Increased padding for better touch target
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(demo.title, style = MaterialTheme.typography.body1)
+                                }
+                            }
+                            Divider()
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun DemoScreen(demo: ComponentDemo, onBack: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = demo.title, style = MaterialTheme.typography.h5)
+            OutlinedButton(onClick = onBack) { Text("返回") }
+        }
+        Divider()
+
+        when (demo.id) {
+            // ui
+            "ui_box" -> UiBoxDemo()
+            // foundation
+            "foundation_basic_text" -> FoundationBasicTextDemo()
+            "foundation_lazy_column" -> FoundationLazyColumnDemo()
+
+            // benchmark
+            "benchmark_1500_text" -> Compose1500Text()
+            "benchmark_1500_view" -> ComposeView1500Page()
+
+            // material
+            "material_alert_dialog" -> AlertDialogSamples()
+            "material_app_bar" -> AppBarSamples()
+            "material_backdrop_scaffold" -> BackdropScaffoldSamples()
+            "material_badge" -> BadgeSamples()
+            "material_bottom_navigation" -> BottomNavigationSamples()
+            "material_bottom_sheet_scaffold" -> BottomSheetScaffoldSamples()
+            "material_button_samples" -> ButtonSamples()
+            "material_card_samples" -> CardSamples()
+            "material_content_alpha" -> ContentAlphaSamples()
+            "material_drawer_samples" -> DrawerSamples()
+            "material_elevation_samples" -> ElevationSamples()
+            "material_exposed_dropdown_menu" -> ExposedDropdownMenuSamples()
+            "material_fab_samples" -> FloatingActionButtonSamples()
+            "material_icon_button_samples" -> IconButtonSamples()
+            "material_list_samples" -> ListSamples()
+            "material_menu_samples" -> MenuSamples()
+            "material_modal_bottom_sheet" -> ModalBottomSheetSamples()
+            "material_navigation_rail" -> NavigationRailSample()
+            "material_progress_indicator" -> ProgressIndicatorSamples()
+            "material_pull_refresh" -> PullRefreshSamples()
+            "material_selection_controls" -> SelectionControlsSamples()
+            "material_slider_sample" -> SliderSample()
+            "material_surface_samples" -> SurfaceSamples()
+            "material_swipeable_samples" -> SwipeableSamples()
+            "material_swipe_to_dismiss" -> SwipeToDismissSamples()
+            "material_tab_samples" -> TabSamples()
+            "material_text_field_samples" -> TextFieldSamples()
+            "material_text_samples" -> TextSamples()
+            "material_theme_samples" -> ThemeSamples()
+            else -> {
+                if (demo.group == ${PACKAGE_NAME}.navigation.ComposeGroup.Platform) {
+                    ${PACKAGE_NAME}.PlatformDemo(demo.id)
+                }
+            }
+        }
+    }
+}

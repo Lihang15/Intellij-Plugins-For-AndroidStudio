@@ -1,0 +1,11 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.material.FloatingActionButton
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
+
+@Composable
+internal fun FloatingActionButtonSamples() {
+    var clicks by remember { mutableStateOf(0) }
+    FloatingActionButton(onClick = { clicks++ }) { Text("$clicks") }
+}

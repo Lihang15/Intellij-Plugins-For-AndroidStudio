@@ -1,0 +1,127 @@
+package ${PACKAGE_NAME}.navigation
+
+enum class ComposeGroup {
+    Ui, Foundation, Material, Benchmark, Platform
+}
+
+data class ComponentDemo(
+    val id: String,
+    val title: String,
+    val group: ComposeGroup
+)
+
+val componentDemos: List<ComponentDemo> = listOf(
+    // ui
+    ComponentDemo("ui_box", "Box", ComposeGroup.Ui),
+    // foundation
+    ComponentDemo("foundation_basic_text", "BasicText", ComposeGroup.Foundation),
+    ComponentDemo("foundation_lazy_column", "LazyColumn", ComposeGroup.Foundation),
+    // material 组：新增完整清单
+    ComponentDemo("material_alert_dialog", "AlertDialogSample", ComposeGroup.Material),
+    ComponentDemo("material_app_bar", "AppBarSamples", ComposeGroup.Material),
+    ComponentDemo("material_backdrop_scaffold", "BackdropScaffoldSamples", ComposeGroup.Material),
+    ComponentDemo("material_badge", "BadgeSamples", ComposeGroup.Material),
+    ComponentDemo("material_bottom_navigation", "BottomNavigationSamples", ComposeGroup.Material),
+    ComponentDemo("material_bottom_sheet_scaffold", "BottomSheetScaffoldSamples", ComposeGroup.Material),
+    ComponentDemo("material_button_samples", "ButtonSamples", ComposeGroup.Material),
+    ComponentDemo("material_card_samples", "CardSamples", ComposeGroup.Material),
+    ComponentDemo("material_chip_samples", "ChipSamples", ComposeGroup.Material),
+    ComponentDemo("material_content_alpha", "ContentAlphaSamples", ComposeGroup.Material),
+    ComponentDemo("material_drawer_samples", "DrawerSamples", ComposeGroup.Material),
+    ComponentDemo("material_elevation_samples", "ElevationSamples", ComposeGroup.Material),
+    ComponentDemo("material_exposed_dropdown_menu", "ExposedDropdownMenuSamples", ComposeGroup.Material),
+    ComponentDemo("material_fab_samples", "FloatingActionButtonSamples", ComposeGroup.Material),
+    ComponentDemo("material_icon_button_samples", "IconButtonSamples", ComposeGroup.Material),
+    ComponentDemo("material_list_samples", "ListSamples", ComposeGroup.Material),
+    ComponentDemo("material_menu_samples", "MenuSamples", ComposeGroup.Material),
+    ComponentDemo("material_modal_bottom_sheet", "ModalBottomSheetSamples", ComposeGroup.Material),
+    ComponentDemo("material_navigation_rail", "NavigationRailSample", ComposeGroup.Material),
+    ComponentDemo("material_progress_indicator", "ProgressIndicatorSamples", ComposeGroup.Material),
+    ComponentDemo("material_pull_refresh", "PullRefreshSamples", ComposeGroup.Material),
+    ComponentDemo("material_scaffold_samples", "ScaffoldSamples", ComposeGroup.Material),
+    ComponentDemo("material_selection_controls", "SelectionControlsSamples", ComposeGroup.Material),
+    ComponentDemo("material_slider_sample", "SliderSample", ComposeGroup.Material),
+    ComponentDemo("material_surface_samples", "SurfaceSamples", ComposeGroup.Material),
+    ComponentDemo("material_swipeable_samples", "SwipeableSamples", ComposeGroup.Material),
+    ComponentDemo("material_swipe_to_dismiss", "SwipeToDismissSamples", ComposeGroup.Material),
+    ComponentDemo("material_tab_samples", "TabSamples", ComposeGroup.Material),
+    ComponentDemo("material_text_field_samples", "TextFieldSamples", ComposeGroup.Material),
+    ComponentDemo("material_text_samples", "TextSamples", ComposeGroup.Material),
+    ComponentDemo("material_theme_samples", "ThemeSamples", ComposeGroup.Material),
+    // benchmark
+    ComponentDemo("benchmark_1500_text", "1500 Text", ComposeGroup.Benchmark),
+    ComponentDemo("benchmark_1500_view", "1500 View", ComposeGroup.Benchmark),
+)
+
+val groupTitles: Map<ComposeGroup, String> = mapOf(
+    ComposeGroup.Ui to "compose.ui",
+    ComposeGroup.Foundation to "compose.foundation",
+    ComposeGroup.Material to "compose.material",
+    ComposeGroup.Platform to "Platform",
+)
+
+fun demosByGroup(): Map<ComposeGroup, List<ComponentDemo>> {
+    val standardDemos = ComposeGroup.entries.filter { it != ComposeGroup.Platform }
+        .associateWith { g -> componentDemos.filter { it.group == g } }
+        .toMutableMap()
+
+    val platformDemos = ${PACKAGE_NAME}.getPlatformDemoList().map {
+        ComponentDemo(
+            id = it.id,
+            title = it.title,
+            group = ComposeGroup.Platform
+        )
+    }
+
+    if (platformDemos.isNotEmpty()) {
+        standardDemos[ComposeGroup.Platform] = platformDemos
+    }
+    
+    return standardDemos
+}
+
+fun demosJson(): String = buildString {
+    append('[')
+    componentDemos.forEachIndexed { index, demo ->
+        if (index > 0) append(',')
+        append("{\"id\":\"")
+        append(jsonEscape(demo.id))
+        append("\",\"title\":\"")
+        append(jsonEscape(demo.title))
+        append("\",\"group\":\"")
+        append(demo.group.name)
+        append("\"}")
+    }
+    append(']')
+}
+
+fun groupTitlesJson(): String = buildString {
+    append('{')
+    ComposeGroup.entries.forEachIndexed { index, group ->
+        if (index > 0) append(',')
+        append('"')
+        append(group.name)
+        append("\":\"")
+        append(jsonEscape(groupTitles[group] ?: group.name))
+        append('"')
+    }
+    append('}')
+}
+
+private fun jsonEscape(input: String): String = buildString(input.length) {
+    input.forEach { ch ->
+        when (ch) {
+            '\\' -> append("\\\\")
+            '"' -> append("\\\"")
+            '\n' -> append("\\n")
+            '\r' -> append("\\r")
+            '\t' -> append("\\t")
+            else -> append(ch)
+        }
+    }
+}
+
+sealed interface Page {
+    data object Home : Page
+    data class Detail(val demo: ComponentDemo) : Page
+}

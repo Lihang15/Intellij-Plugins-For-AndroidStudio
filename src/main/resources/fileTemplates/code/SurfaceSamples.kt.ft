@@ -1,0 +1,27 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.ui.Modifier
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+
+@Composable
+internal fun SurfaceSamples() {
+    var elevation by remember { mutableStateOf(6f) }
+    var rounded by remember { mutableStateOf(12f) }
+    var bg by remember { mutableStateOf(Color(0xFFE0F7FA)) }
+
+    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Surface(shape = RoundedCornerShape(rounded.dp), elevation = elevation.dp, color = bg) {
+            Column(Modifier.padding(12.dp)) {
+                Text("Surface 属性演示")
+                Text("elevation=${elevation.toInt()} shape=${rounded.toInt()} color=${bg}")
+            }
+        }
+        Text("elevation: ${elevation.toInt()}dp"); Slider(value = elevation, onValueChange = { elevation = it }, valueRange = 0f..24f)
+        Text("圆角: ${rounded.toInt()}dp"); Slider(value = rounded, onValueChange = { rounded = it }, valueRange = 0f..32f)
+    }
+}

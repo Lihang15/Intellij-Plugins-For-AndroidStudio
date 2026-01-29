@@ -1,0 +1,21 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.Color
+
+@Composable
+internal fun ButtonSamples() {
+    var enabled by remember { mutableStateOf(true) }
+    var clicks by remember { mutableStateOf(0) }
+
+    Button(
+        enabled = enabled,
+        onClick = { clicks++ },
+        colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF4CAF50), contentColor = Color.White)
+    ) {
+        Text("Material Button 点击: $clicks")
+    }
+}

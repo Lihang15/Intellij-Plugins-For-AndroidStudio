@@ -1,0 +1,21 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
+
+@Composable
+internal fun TextFieldSamples() {
+    var text by remember { mutableStateOf("") }
+    var enabled by remember { mutableStateOf(true) }
+    var isError by remember { mutableStateOf(false) }
+
+    OutlinedTextField(
+        value = text,
+        onValueChange = { text = it },
+        enabled = enabled,
+        isError = isError,
+        label = { Text("Label") },
+        placeholder = { Text("Placeholder") }
+    )
+}

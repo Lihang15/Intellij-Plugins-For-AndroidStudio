@@ -1,0 +1,20 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.material.Card
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+
+@Composable
+internal fun CardSamples() {
+    var elevation by remember { mutableStateOf(4f) }
+    Card(elevation = elevation.dp) {
+        Column(Modifier.padding(12.dp)) {
+            Text("Material Card 标题")
+            Text("阴影 elevation: ${elevation.toInt()}dp")
+        }
+    }
+}

@@ -1,0 +1,14 @@
+package ${PACKAGE_NAME}
+
+interface Platform {
+    val name: String
+}
+
+expect fun getPlatform(): Platform
+
+internal data class PlatformDemoItem(val id: String, val title: String)
+
+internal expect fun getPlatformDemoList(): List<PlatformDemoItem>
+
+@androidx.compose.runtime.Composable
+internal expect fun PlatformDemo(id: String)

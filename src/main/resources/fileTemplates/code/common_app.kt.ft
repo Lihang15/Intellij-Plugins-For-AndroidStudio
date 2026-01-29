@@ -18,14 +18,14 @@ import androidx.compose.ui.Modifier
 internal fun App() {
     MaterialTheme {
         // 使用 Page 类型的状态，修复类型推断报错
-        var page by remember { mutableStateOf<com.example.kmptpc_compose_sample.navigation.Page>(com.example.kmptpc_compose_sample.navigation.Page.Home) }
+        var page by remember { mutableStateOf<${PACKAGE_NAME}.navigation.Page>(${PACKAGE_NAME}.navigation.Page.Home) }
 
         // 首页状态提升：滚动、搜索、分组展开状态
         val listState = androidx.compose.foundation.lazy.rememberLazyListState()
         var searchQuery by remember { mutableStateOf("") }
         val expandedGroups = remember {
-            mutableStateMapOf<com.example.kmptpc_compose_sample.navigation.ComposeGroup, Boolean>().apply {
-                com.example.kmptpc_compose_sample.navigation.ComposeGroup.entries.forEach { put(it, true) }
+            mutableStateMapOf<${PACKAGE_NAME}.navigation.ComposeGroup, Boolean>().apply {
+                ${PACKAGE_NAME}.navigation.ComposeGroup.entries.forEach { put(it, true) }
             }
         }
 
@@ -36,10 +36,10 @@ internal fun App() {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             when (val p = page) {
-                is com.example.kmptpc_compose_sample.navigation.Page.Home -> {
+                is ${PACKAGE_NAME}.navigation.Page.Home -> {
                     HomeScreen(
                         onSelect = { demo ->
-                            page = com.example.kmptpc_compose_sample.navigation.Page.Detail(demo)
+                            page = ${PACKAGE_NAME}.navigation.Page.Detail(demo)
                         },
                         listState = listState,
                         searchQuery = searchQuery,
@@ -47,8 +47,8 @@ internal fun App() {
                         expandedGroups = expandedGroups
                     )
                 }
-                is com.example.kmptpc_compose_sample.navigation.Page.Detail -> {
-                    DemoScreen(demo = p.demo, onBack = { page = com.example.kmptpc_compose_sample.navigation.Page.Home })
+                is ${PACKAGE_NAME}.navigation.Page.Detail -> {
+                    DemoScreen(demo = p.demo, onBack = { page = ${PACKAGE_NAME}.navigation.Page.Home })
                 }
             }
         }

@@ -1,0 +1,21 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.material.NavigationRail
+import androidx.compose.material.NavigationRailItem
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
+
+@Composable
+internal fun NavigationRailSample() {
+    var selected by remember { mutableStateOf(0) }
+    NavigationRail {
+        listOf("主页", "消息", "设置").forEachIndexed { index, label ->
+            NavigationRailItem(
+                selected = selected == index,
+                onClick = { selected = index },
+                icon = { Text("★") },
+                label = { Text(label) }
+            )
+        }
+    }
+}

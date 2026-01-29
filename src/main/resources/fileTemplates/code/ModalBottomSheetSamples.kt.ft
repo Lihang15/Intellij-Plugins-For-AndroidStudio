@@ -1,0 +1,26 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.ui.Modifier
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+internal fun ModalBottomSheetSamples() {
+    val sheetState = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
+    val scope = rememberCoroutineScope()
+
+    ModalBottomSheetLayout(
+        sheetState = sheetState,
+        sheetContent = { Column(Modifier.padding(12.dp)) { Text("ModalBottomSheet 内容") } }
+    ) {
+        Column(Modifier.padding(12.dp)) {
+            Button(onClick = { scope.launch { sheetState.show() } }) { Text("显示") }
+            Spacer(Modifier.height(8.dp))
+            Button(onClick = { scope.launch { sheetState.hide() } }) { Text("隐藏") }
+        }
+    }
+}

@@ -31,7 +31,7 @@ class AndroidFileGenerator(params: CMPConfigModel) : FileGenerator(params) {
                 ftManager.getCodeTemplate(Template.DRAWABLE)
             ),
              GeneratorTemplateFile(
-                "composeApp/src/androidMain/res/drawable/ic_lancher_foreground.xml",
+                "composeApp/src/androidMain/res/drawable-v24/ic_lancher_foreground.xml",
                 ftManager.getCodeTemplate(Template.DRAWABLE_V24)
             ),
             GeneratorTemplateFile(

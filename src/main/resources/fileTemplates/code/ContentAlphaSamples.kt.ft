@@ -1,0 +1,22 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.ui.Modifier
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.unit.dp
+
+@Composable
+internal fun ContentAlphaSamples() {
+    var disabled by remember { mutableStateOf(false) }
+    Column(Modifier.padding(12.dp)) {
+        Row {
+            Checkbox(checked = disabled, onCheckedChange = { disabled = it })
+            Text("使用 ContentAlpha.disabled")
+        }
+        CompositionLocalProvider(LocalContentAlpha provides if (disabled) ContentAlpha.disabled else ContentAlpha.high) {
+            Text("受 ContentAlpha 控制的文本")
+        }
+        Text("不受影响的文本")
+    }
+}

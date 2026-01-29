@@ -1,0 +1,31 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.ui.Modifier
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+
+@Composable
+internal fun SelectionControlsSamples() {
+    var checked by remember { mutableStateOf(true) }
+    var selected by remember { mutableStateOf(0) }
+    var switchOn by remember { mutableStateOf(true) }
+
+    Column(Modifier.padding(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = checked, onCheckedChange = { checked = it })
+            Text("Checkbox: ${if (checked) "选中" else "未选"}")
+        }
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            RadioButton(selected = selected == 0, onClick = { selected = 0 })
+            RadioButton(selected = selected == 1, onClick = { selected = 1 })
+            Text("Radio 选择: $selected")
+        }
+        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+            Switch(checked = switchOn, onCheckedChange = { switchOn = it })
+            Text("Switch: ${if (switchOn) "开" else "关"}")
+        }
+    }
+}

@@ -1,0 +1,40 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+
+@Composable
+internal fun AppBarSamples() {
+    var title by remember { mutableStateOf("TopAppBar 标题") }
+    var showActions by remember { mutableStateOf(true) }
+    var elevation by remember { mutableStateOf(4f) }
+
+    Column {
+        TopAppBar(
+            title = { Text(title) },
+            actions = {
+                if (showActions) {
+                    TextButton(onClick = { title = "点击了 Action" }) { Text("Action") }
+                }
+            },
+            elevation = elevation.dp
+        )
+        Spacer(Modifier.height(8.dp))
+        BottomAppBar {
+            Text("BottomAppBar")
+        }
+
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("标题") })
+            Text("阴影: ${elevation.toInt()}dp")
+            Slider(value = elevation, onValueChange = { elevation = it }, valueRange = 0f..16f)
+            Row {
+                Checkbox(checked = showActions, onCheckedChange = { showActions = it })
+                Text("显示 Action")
+            }
+        }
+    }
+}

@@ -1,0 +1,19 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+
+@Composable
+internal fun BottomNavigationSamples() {
+    var selected by remember { mutableStateOf(0) }
+    BottomNavigation {
+        listOf("主页", "消息", "设置").forEachIndexed { index, label ->
+            BottomNavigationItem(
+                selected = selected == index,
+                onClick = { selected = index },
+                icon = { },
+                label = { Text(label) }
+            )
+        }
+    }
+}

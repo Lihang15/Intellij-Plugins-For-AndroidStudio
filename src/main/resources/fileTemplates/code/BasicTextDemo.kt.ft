@@ -1,0 +1,43 @@
+package ${PACKAGE_NAME}.demos.foundation
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+@Composable
+internal fun FoundationBasicTextDemo() {
+    var text by remember { mutableStateOf("Hello Compose") }
+    var size by remember { mutableStateOf(18f) }
+    var colorToggle by remember { mutableStateOf(false) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(value = text, onValueChange = { text = it }, label = { Text("内容") })
+        Text("字体大小: ${size.toInt()}sp")
+        Slider(value = size, onValueChange = { size = it }, valueRange = 12f..48f)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = colorToggle, onCheckedChange = { colorToggle = it })
+            Text("使用高亮颜色")
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colors.surface)
+                .padding(12.dp)
+        ) {
+            BasicText(
+                text = text,
+                style = androidx.compose.ui.text.TextStyle(
+                    fontSize = size.sp,
+                    color = if (colorToggle) MaterialTheme.colors.primary else Color.Unspecified
+                )
+            )
+        }
+    }
+}

@@ -1,0 +1,26 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+@Composable
+internal fun PullRefreshSamples() {
+    var refreshing by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Button(onClick = {
+            scope.launch {
+                refreshing = true
+                delay(1000)
+                refreshing = false
+            }
+        }) { Text("手动触发刷新") }
+        if (refreshing) LinearProgressIndicator(Modifier.fillMaxWidth())
+        Text(if (refreshing) "刷新中..." else "刷新完成")
+    }
+}

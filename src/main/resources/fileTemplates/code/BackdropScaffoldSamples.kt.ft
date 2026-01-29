@@ -1,0 +1,39 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+internal fun BackdropScaffoldSamples() {
+    val scaffoldState = rememberBackdropScaffoldState(BackdropValue.Concealed)
+    val scope = rememberCoroutineScope()
+    var clicks by remember { mutableStateOf(0) }
+
+    BackdropScaffold(
+        scaffoldState = scaffoldState,
+        appBar = { TopAppBar(title = { Text("BackdropScaffold") }) },
+        backLayerContent = {
+            Column(Modifier.fillMaxWidth().padding(12.dp)) {
+                Text("后层内容")
+                Button(onClick = { clicks++ }) { Text("点击: $clicks") }
+            }
+        },
+        frontLayerContent = {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Button(
+                    onClick = {
+                        scope.launch {
+                            if (scaffoldState.isConcealed) scaffoldState.reveal() else scaffoldState.conceal()
+                        }
+                    }
+                ) { Text(if (scaffoldState.isConcealed) "展开前层" else "收起前层") }
+            }
+        }
+    )
+}

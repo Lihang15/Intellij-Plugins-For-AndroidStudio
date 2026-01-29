@@ -1,0 +1,30 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.Text
+import androidx.compose.material.TextButton
+import androidx.compose.runtime.*
+
+@Composable
+internal fun AlertDialogSamples() {
+    var open by remember { mutableStateOf(true) }
+    var dismissOnClickOutside by remember { mutableStateOf(true) }
+    var dismissOnBackPress by remember { mutableStateOf(true) }
+
+    if (open) {
+        AlertDialog(
+            onDismissRequest = {
+                if (dismissOnBackPress) open = false
+            },
+            title = { Text("AlertDialog") },
+            text = { Text("展示标题、内容、确认/取消按钮，以及关闭行为。") },
+            confirmButton = {
+                TextButton(onClick = { open = false }) { Text("确认") }
+            },
+            dismissButton = {
+                TextButton(onClick = { if (dismissOnClickOutside) open = false }) { Text("取消") }
+            }
+        )
+    }
+}
+

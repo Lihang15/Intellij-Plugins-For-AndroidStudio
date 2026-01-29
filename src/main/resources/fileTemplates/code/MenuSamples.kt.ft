@@ -1,0 +1,17 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.*
+
+@Composable
+internal fun MenuSamples() {
+    var expanded by remember { mutableStateOf(false) }
+    Column {
+        Button(onClick = { expanded = true }) { Text("打开菜单") }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(onClick = { expanded = false }) { Text("菜单项 1") }
+            DropdownMenuItem(onClick = { expanded = false }) { Text("菜单项 2") }
+        }
+    }
+}

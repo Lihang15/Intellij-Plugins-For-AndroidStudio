@@ -1,0 +1,14 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.material.IconButton
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
+
+@Composable
+internal fun IconButtonSamples() {
+    var clicks by remember { mutableStateOf(0) }
+    IconButton(onClick = { clicks++ }) {
+        Text("★")
+    }
+    Text("点击次数: $clicks")
+}

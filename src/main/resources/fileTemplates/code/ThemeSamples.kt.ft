@@ -1,0 +1,11 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
+
+@Composable
+internal fun ThemeSamples() {
+    // 演示 MaterialTheme 的基本用法；完整主题切换后续扩展
+    Text("当前 MaterialTheme.typography.body1 示例文本")
+}

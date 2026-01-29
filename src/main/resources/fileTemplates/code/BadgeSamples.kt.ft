@@ -1,0 +1,19 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.ui.Modifier
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.unit.dp
+
+@Composable
+internal fun BadgeSamples() {
+    var count by remember { mutableStateOf(3) }
+    BadgedBox(badge = { Text("$count") }) {
+        Text("带徽章的内容")
+    }
+    Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Button(onClick = { count++ }) { Text("+1") }
+        Button(onClick = { count = 0 }) { Text("清零") }
+    }
+}

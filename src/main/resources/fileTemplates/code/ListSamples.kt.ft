@@ -1,0 +1,20 @@
+@file:OptIn(androidx.compose.material.ExperimentalMaterialApi::class)
+
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.material.ListItem
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
+import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.unit.dp
+
+@Composable
+internal fun ListSamples() {
+    val items = (1..20).map { "Item $it" }
+    LazyColumn(contentPadding = PaddingValues(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        items(items) { label ->
+            ListItem(text = { Text(label) }, secondaryText = { Text("副标题") })
+        }
+    }
+}

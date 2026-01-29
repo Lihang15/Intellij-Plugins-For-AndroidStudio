@@ -1,0 +1,23 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.ui.Modifier
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.unit.dp
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+internal fun SwipeToDismissSamples() {
+    val dismissState = rememberDismissState()
+    SwipeToDismiss(
+        state = dismissState,
+        background = {
+            Box(Modifier.fillMaxWidth().height(64.dp)) { Text("滑动删除背景") }
+        },
+        dismissContent = {
+            Box(Modifier.fillMaxWidth().height(64.dp)) { Text("可滑动删除内容") }
+        }
+    )
+    Text("当前状态: ${dismissState.currentValue}")
+}

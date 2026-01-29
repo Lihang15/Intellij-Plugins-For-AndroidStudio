@@ -1,0 +1,34 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.ui.Modifier
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+internal fun BottomSheetScaffoldSamples() {
+    val sheetState = rememberBottomSheetScaffoldState()
+    val scope = rememberCoroutineScope()
+    BottomSheetScaffold(
+        scaffoldState = sheetState,
+        sheetContent = {
+            Column(Modifier.padding(12.dp)) {
+                Text("BottomSheet 内容")
+                Text("可在此添加交互与属性")
+            }
+        },
+        sheetPeekHeight = 64.dp
+    ) { padding ->
+        Column(Modifier.padding(padding).padding(12.dp)) {
+            Button(onClick = {
+                scope.launch {
+                    val state = sheetState.bottomSheetState
+                    if (state.isCollapsed) state.expand() else state.collapse()
+                }
+            }) { Text("展开/收起 BottomSheet") }
+        }
+    }
+}

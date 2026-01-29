@@ -1,0 +1,30 @@
+package ${PACKAGE_NAME}.demos.material
+
+import androidx.compose.ui.Modifier
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.unit.dp
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+internal fun ExposedDropdownMenuSamples() {
+    val options = listOf("选项 A", "选项 B", "选项 C")
+    var expanded by remember { mutableStateOf(false) }
+    var selected by remember { mutableStateOf(options.first()) }
+
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
+        OutlinedTextField(
+            value = selected, onValueChange = {}, readOnly = true, label = { Text("选择项") }
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { option ->
+                DropdownMenuItem(onClick = { selected = option; expanded = false }) {
+                    Text(option)
+                }
+            }
+        }
+    }
+    Spacer(Modifier.height(8.dp))
+    Text("当前选择: $selected")
+}

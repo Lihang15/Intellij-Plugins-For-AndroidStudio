@@ -1,0 +1,52 @@
+package ${PACKAGE_NAME}.demos.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun UiBoxDemo() {
+    val alignments = listOf(
+        Alignment.TopStart, Alignment.TopCenter, Alignment.TopEnd,
+        Alignment.CenterStart, Alignment.Center, Alignment.CenterEnd,
+        Alignment.BottomStart, Alignment.BottomCenter, Alignment.BottomEnd
+    )
+    var selected by remember { mutableStateOf(Alignment.Center) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Alignment")
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            alignments.forEach { a ->
+                val label = a.toString().removePrefix("Alignment.")
+                if (selected == a) {
+                    Button(onClick = { selected = a }) {
+                        Text(label)
+                    }
+                } else {
+                    OutlinedButton(onClick = { selected = a }) {
+                        Text(label)
+                    }
+                }
+            }
+        }
+        Box(
+            modifier = Modifier
+                .size(220.dp)
+                .background(MaterialTheme.colors.surface) // surfaceVariant -> surface
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .align(selected)
+                    .background(MaterialTheme.colors.primary) // primary -> primary
+            )
+        }
+    }
+}
