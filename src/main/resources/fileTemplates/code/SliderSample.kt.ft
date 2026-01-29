@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.*
 internal fun SliderSample() {
     var value by remember { mutableStateOf(0.5f) }
     Column(Modifier.padding(12.dp)) {
-        Text("当前值: ${kotlin.math.round(value * 10.0f) / 10.0f}")
+        Text("当前值: ${'$'}{kotlin.math.round(value * 10.0f) / 10.0f}")
         Slider(value = value, onValueChange = { value = it }, valueRange = 0f..1f, steps = 4)
     }
 }

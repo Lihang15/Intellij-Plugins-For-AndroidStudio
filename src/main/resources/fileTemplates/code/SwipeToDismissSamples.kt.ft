@@ -19,5 +19,5 @@ internal fun SwipeToDismissSamples() {
             Box(Modifier.fillMaxWidth().height(64.dp)) { Text("可滑动删除内容") }
         }
     )
-    Text("当前状态: ${dismissState.currentValue}")
+    Text("当前状态: ${'$'}{dismissState.currentValue}")
 }

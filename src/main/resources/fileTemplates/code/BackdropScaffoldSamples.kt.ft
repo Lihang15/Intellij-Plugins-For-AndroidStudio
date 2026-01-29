@@ -21,7 +21,7 @@ internal fun BackdropScaffoldSamples() {
         backLayerContent = {
             Column(Modifier.fillMaxWidth().padding(12.dp)) {
                 Text("后层内容")
-                Button(onClick = { clicks++ }) { Text("点击: $clicks") }
+                Button(onClick = { clicks++ }) { Text("点击: ${'$'}clicks") }
             }
         },
         frontLayerContent = {

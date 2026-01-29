@@ -36,14 +36,14 @@ internal fun InteropListNested() {
                         name = "button",
                         modifier = Modifier.fillMaxWidth().height(60.dp),
                         parameter = js { 
-                            "text"("ArkUI Button $index") 
+                            "text"("ArkUI Button ${'$'}index") 
                             "backgroundColor"("#FF0000FF")
                         }
                     )
                 }
                 else -> {
                     // Compose Text
-                    Text("Compose Item $index", Modifier.padding(16.dp))
+                    Text("Compose Item ${'$'}index", Modifier.padding(16.dp))
                 }
             }
         }

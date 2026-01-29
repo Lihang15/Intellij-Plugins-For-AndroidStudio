@@ -28,18 +28,19 @@ internal fun InteropListSimple() {
                             name = "label",
                             modifier = Modifier.width(250.dp).height(100.dp),
                             parameter = js {
-                                "text"("ArkUI Button $index")
+                                "text"("ArkUI Button ${'$'}index")
                                 "backgroundColor"("#FF0000FF")
                             },
                         )
 
                         Button({
-                            println("Compose Button $index clicked")
+                            println("Compose Button ${'$'}index clicked")
                         }, modifier = Modifier.height(30.dp).fillMaxWidth()) {
-                            Text("Compose Button $index")
+                            Text("Compose Button ${'$'}index")
                         }
                     }
                 }
             }
         }
     }
+}

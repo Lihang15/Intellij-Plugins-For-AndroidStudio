@@ -19,7 +19,7 @@ internal fun FoundationBasicTextDemo() {
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(value = text, onValueChange = { text = it }, label = { Text("内容") })
-        Text("字体大小: ${size.toInt()}sp")
+        Text("字体大小: ${'$'}{size.toInt()}sp")
         Slider(value = size, onValueChange = { size = it }, valueRange = 12f..48f)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = colorToggle, onCheckedChange = { colorToggle = it })

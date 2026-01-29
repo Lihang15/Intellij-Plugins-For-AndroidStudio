@@ -26,5 +26,5 @@ internal fun ExposedDropdownMenuSamples() {
         }
     }
     Spacer(Modifier.height(8.dp))
-    Text("当前选择: $selected")
+    Text("当前选择: ${'$'}selected")
 }

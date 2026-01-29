@@ -7,5 +7,5 @@ import androidx.compose.runtime.*
 @Composable
 internal fun FloatingActionButtonSamples() {
     var clicks by remember { mutableStateOf(0) }
-    FloatingActionButton(onClick = { clicks++ }) { Text("$clicks") }
+    FloatingActionButton(onClick = { clicks++ }) { Text("${'$'}clicks") }
 }

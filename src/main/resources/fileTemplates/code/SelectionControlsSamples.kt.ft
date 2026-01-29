@@ -16,16 +16,16 @@ internal fun SelectionControlsSamples() {
     Column(Modifier.padding(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = checked, onCheckedChange = { checked = it })
-            Text("Checkbox: ${if (checked) "选中" else "未选"}")
+            Text("Checkbox: ${'$'}{if (checked) "选中" else "未选"}")
         }
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             RadioButton(selected = selected == 0, onClick = { selected = 0 })
             RadioButton(selected = selected == 1, onClick = { selected = 1 })
-            Text("Radio 选择: $selected")
+            Text("Radio 选择: ${'$'}selected")
         }
         Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
             Switch(checked = switchOn, onCheckedChange = { switchOn = it })
-            Text("Switch: ${if (switchOn) "开" else "关"}")
+            Text("Switch: ${'$'}{if (switchOn) "开" else "关"}")
         }
     }
 }

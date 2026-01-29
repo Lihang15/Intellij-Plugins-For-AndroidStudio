@@ -22,7 +22,7 @@ internal fun Compose1500Text() {
     ) {
         repeat(1500) { index ->
             Text(
-                text = "Compose1500Text Item #$index",
+                text = "Compose1500Text Item #${'$'}index",
                 fontSize = 16.sp,
                 modifier = Modifier
                     .width(300.dp)

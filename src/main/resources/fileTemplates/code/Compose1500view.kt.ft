@@ -46,7 +46,7 @@ internal fun ComposeView1500Page() {
                     )
             ) {
                 Text(
-                    text = "Item #$index",
+                    text = "Item #${'$'}index",
                 )
             }
         }

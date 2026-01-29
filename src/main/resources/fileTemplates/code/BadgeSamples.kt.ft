@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 internal fun BadgeSamples() {
     var count by remember { mutableStateOf(3) }
-    BadgedBox(badge = { Text("$count") }) {
+    BadgedBox(badge = { Text("${'$'}count") }) {
         Text("带徽章的内容")
     }
     Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

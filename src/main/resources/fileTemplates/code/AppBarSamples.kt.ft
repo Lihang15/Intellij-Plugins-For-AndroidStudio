@@ -29,7 +29,7 @@ internal fun AppBarSamples() {
 
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("标题") })
-            Text("阴影: ${elevation.toInt()}dp")
+            Text("阴影: ${'$'}{elevation.toInt()}dp")
             Slider(value = elevation, onValueChange = { elevation = it }, valueRange = 0f..16f)
             Row {
                 Checkbox(checked = showActions, onCheckedChange = { showActions = it })

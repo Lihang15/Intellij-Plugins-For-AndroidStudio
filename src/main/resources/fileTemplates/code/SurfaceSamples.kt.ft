@@ -18,10 +18,10 @@ internal fun SurfaceSamples() {
         Surface(shape = RoundedCornerShape(rounded.dp), elevation = elevation.dp, color = bg) {
             Column(Modifier.padding(12.dp)) {
                 Text("Surface 属性演示")
-                Text("elevation=${elevation.toInt()} shape=${rounded.toInt()} color=${bg}")
+                Text("elevation=${'$'}{elevation.toInt()} shape=${'$'}{rounded.toInt()} color=${'$'}{bg}")
             }
         }
-        Text("elevation: ${elevation.toInt()}dp"); Slider(value = elevation, onValueChange = { elevation = it }, valueRange = 0f..24f)
-        Text("圆角: ${rounded.toInt()}dp"); Slider(value = rounded, onValueChange = { rounded = it }, valueRange = 0f..32f)
+        Text("elevation: ${'$'}{elevation.toInt()}dp"); Slider(value = elevation, onValueChange = { elevation = it }, valueRange = 0f..24f)
+        Text("圆角: ${'$'}{rounded.toInt()}dp"); Slider(value = rounded, onValueChange = { rounded = it }, valueRange = 0f..32f)
     }
 }

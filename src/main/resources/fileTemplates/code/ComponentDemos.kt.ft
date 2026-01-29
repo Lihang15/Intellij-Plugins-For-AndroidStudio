@@ -92,7 +92,7 @@ internal fun HomeScreen(
                                         style = MaterialTheme.typography.h6
                                     )
                                     val countText =
-                                        if (searchQuery.isNotBlank()) "匹配：${demos.size}" else "共 ${demos.size} 项"
+                                        if (searchQuery.isNotBlank()) "匹配：${'$'}{demos.size}" else "共 ${'$'}{demos.size} 项"
                                     Text(countText, style = MaterialTheme.typography.caption)
                                 }
                                 Text(

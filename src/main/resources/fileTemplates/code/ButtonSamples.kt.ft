@@ -16,6 +16,6 @@ internal fun ButtonSamples() {
         onClick = { clicks++ },
         colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF4CAF50), contentColor = Color.White)
     ) {
-        Text("Material Button 点击: $clicks")
+        Text("Material Button 点击: ${'$'}clicks")
     }
 }

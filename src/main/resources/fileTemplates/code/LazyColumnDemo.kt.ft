@@ -18,9 +18,9 @@ internal fun FoundationLazyColumnDemo() {
     var spaced by remember { mutableStateOf(4) }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("条目数量: $count")
+        Text("条目数量: ${'$'}count")
         Slider(value = count.toFloat(), onValueChange = { count = it.toInt() }, valueRange = 1f..50f)
-        Text("条目间距: ${spaced}dp")
+        Text("条目间距: ${'$'}{spaced}dp")
         Slider(value = spaced.toFloat(), onValueChange = { spaced = it.toInt() }, valueRange = 0f..24f)
 
         LazyColumn(
@@ -39,7 +39,7 @@ internal fun FoundationLazyColumnDemo() {
                         .background(MaterialTheme.colors.secondary),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Item #$idx")
+                    Text("Item #${'$'}idx")
                 }
             }
         }

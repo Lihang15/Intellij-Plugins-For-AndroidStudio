@@ -19,7 +19,7 @@ internal fun TextSamples() {
         Text("按钮", style = MaterialTheme.typography.button)
         Text("说明文字", style = MaterialTheme.typography.caption)
         Spacer(Modifier.height(8.dp))
-        Text("字体大小: ${size.toInt()}sp"); Slider(value = size, onValueChange = { size = it }, valueRange = 12f..36f)
+        Text("字体大小: ${'$'}{size.toInt()}sp"); Slider(value = size, onValueChange = { size = it }, valueRange = 12f..36f)
         Row { Checkbox(checked = bold, onCheckedChange = { bold = it }); Text("加粗") }
     }
 }

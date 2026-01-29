@@ -14,7 +14,7 @@ internal fun CardSamples() {
     Card(elevation = elevation.dp) {
         Column(Modifier.padding(12.dp)) {
             Text("Material Card 标题")
-            Text("阴影 elevation: ${elevation.toInt()}dp")
+            Text("阴影 elevation: ${'$'}{elevation.toInt()}dp")
         }
     }
 }

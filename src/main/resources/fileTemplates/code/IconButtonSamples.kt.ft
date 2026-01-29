@@ -10,5 +10,5 @@ internal fun IconButtonSamples() {
     IconButton(onClick = { clicks++ }) {
         Text("★")
     }
-    Text("点击次数: $clicks")
+    Text("点击次数: ${'$'}clicks")
 }
