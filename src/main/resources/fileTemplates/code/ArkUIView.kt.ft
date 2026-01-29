@@ -1,0 +1,41 @@
+package ${PACKAGE_NAME}
+
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.arkui.ArkUIView
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.interop.AdaptiveParams
+import androidx.compose.ui.interop.InteropContainer
+import androidx.compose.ui.napi.JsObject
+import androidx.compose.ui.napi.js
+
+private val NoOp: Any.() -> Unit = {}
+
+@Composable
+internal fun ArkUIView(
+    name: String,
+    modifier: Modifier,
+    parameter: JsObject = js(),
+    update: (JsObject) -> Unit = NoOp,
+    background: Color = Color.Unspecified,
+    updater: (ArkUIView) -> Unit = NoOp,
+    onCreate: (ArkUIView) -> Unit = NoOp,
+    onRelease: (ArkUIView) -> Unit = NoOp,
+    interactive: Boolean = true,
+    adaptiveParams: AdaptiveParams? = null,
+    tag: String? = null,
+    container: InteropContainer = InteropContainer.BACK
+) = androidx.compose.ui.interop.ArkUIView(
+    name = name,
+    modifier = modifier,
+    parameter = parameter,
+    update = update,
+    background = background,
+    updater = updater,
+    onCreate = onCreate,
+    onRelease = onRelease,
+    interactive = interactive,
+    adaptiveParams = adaptiveParams,
+    tag = tag,
+    container = container,
+)

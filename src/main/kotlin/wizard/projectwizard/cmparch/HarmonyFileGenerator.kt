@@ -10,9 +10,46 @@ class HarmonyFileGenerator(params: CMPConfigModel) : FileGenerator(params) {
     override fun generate(ftManager: FileTemplateManager, packageName: String): List<GeneratorAsset> {
         return listOf(
             GeneratorTemplateFile(
-                "composeApp/src/desktopMain/kotlin/$packageName/main.kt",
-                ftManager.getCodeTemplate(Template.DESKTOP_MAIN)
+                "composeApp/src/ohosArm64Main/kotlin/$packageName/ArkUIView.kt",
+                ftManager.getCodeTemplate(Template.ARKUI_VIEW)
             ),
+             GeneratorTemplateFile(
+                "composeApp/src/ohosArm64Main/kotlin/$packageName/InteropListNested.kt",
+                ftManager.getCodeTemplate(Template.INTEROP_LIST_NESTED)
+            ),
+             GeneratorTemplateFile(
+                "composeApp/src/ohosArm64Main/kotlin/$packageName/InteropListSimple.kt",
+                ftManager.getCodeTemplate(Template.INTEROP_LIST_SIMPLE)
+            ),
+            GeneratorTemplateFile(
+                "composeApp/src/ohosArm64Main/kotlin/$packageName/InteropRenderOrder.kt",
+                ftManager.getCodeTemplate(Template.INTEROP_RENDER_ORDER)
+            ),
+             GeneratorTemplateFile(
+                "composeApp/src/ohosArm64Main/kotlin/$packageName/InteropTextInput.kt",
+                ftManager.getCodeTemplate(Template.INTEROP_TEXT_INPUT)
+            ),
+             GeneratorTemplateFile(
+                "composeApp/src/ohosArm64Main/kotlin/$packageName/MainArkUIViewController.kt",
+                ftManager.getCodeTemplate(Template.MAIN_ARK_UI)
+            ),
+             GeneratorTemplateFile(
+                "composeApp/src/ohosArm64Main/kotlin/$packageName/Platform.ohos.kt",
+                ftManager.getCodeTemplate(Template.PLATFORM_OHOS)
+            ),
+             GeneratorTemplateFile(
+                "composeApp/src/ohosArm64Main/cinterop/include/raw_file.h",
+                ftManager.getCodeTemplate(Template.RAW_FILE)
+            ),
+             GeneratorTemplateFile(
+                "composeApp/src/ohosArm64Main/cinterop/include/raw_file_manager.h",
+                ftManager.getCodeTemplate(Template.RAW_FILE_MANAGER)
+            ),
+              GeneratorTemplateFile(
+                "composeApp/src/ohosArm64Main/cinterop/resource.def",
+                ftManager.getCodeTemplate(Template.RESOURCE_DEF)
+            ),
+
              GeneratorTemplateFile(
                 "harmonyApp/.gitignore",
                 ftManager.getCodeTemplate(Template.GIT_IGNORE)

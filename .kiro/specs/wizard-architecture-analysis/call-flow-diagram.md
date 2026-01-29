@@ -296,7 +296,7 @@ Utils.generateFileFromTemplate()
 │  - Common       │
 │  - Android      │
 │  - iOS          │
-│  - Desktop      │
+│  - Harmony     │
 └────────┬────────┘
          │
          ▼
@@ -348,7 +348,7 @@ Recipe 执行
     ├─ 选择了哪些平台?
     │   ├─ Android → 添加 AndroidFileGenerator
     │   ├─ iOS     → 添加 IOSFileGenerator
-    │   └─ Desktop → 添加 HarmonyFileGenerator
+    │   └─ Harmony → 添加 HarmonyFileGenerator
     │
     └─ 屏幕列表
         ├─ 为每个屏幕生成:

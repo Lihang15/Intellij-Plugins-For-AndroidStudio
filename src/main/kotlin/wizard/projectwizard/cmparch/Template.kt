@@ -1,26 +1,24 @@
 package wizard.projectwizard.cmparch
 
 object Template {
+    const val ANDROID_ABOUT= "Android about"
     const val ANDROID_MAIN_ACTIVITY = "android_main_activity.kt"
     const val PLATFORM_ANDROID = "Platform.android.kt"
     const val ANDROID_MANIFEST = "android_manifest.xml"
 
     const val DRAWABLE = "ic_lancher_background.xml"
-    const val DRAWABLE-V24 = "ic_lancher_foreground.xml"
-    const val MIPMAP-ANYDPI-V26 = "ic_launcher.xml"
-
-
-    const val COMMON_APP = "common_app.kt"
-    const val DESKTOP_MAIN = "desktop_main.kt"
-    const val GRADLE_PROPERTIES = "gradle.properties"
-    const val SETTINGS_GRADLE = "settings.gradle.kts"
-    const val TOML = "libs.versions.toml"
-    const val GRADLE_WRAPPER_PROPERTIES = "gradle_wrapper.properties"
-    const val GRADLE_KTS = "project_build.gradle.kts"
-    const val COMPOSE_GRADLE_KTS = "compose.gradle.kts"
-    const val ANDROID_VALUES_XML = "values.xml"
+    const val DRAWABLE_V24 = "ic_lancher_foreground.xml"
+    const val MIPMAP_ANYDPI_V26_IC = "ic_launcher.xml"
+    const val MIPMAP_ANYDPI_V26_IC_ROUND = "ic_launcher_round.xml"
+    const val VALUES = "strings.xml"
+    
+    const val COMMON_ABOUT= "Common about"
     const val COMMON_COMPOSE_RESOURCES_MULTIPLATFORM_XML = "compose_multiplatform.xml"
+    const val COMMON_APP = "common_app.kt"
+
+    const val IOS_ABOUT= "Ios about"
     const val COMPOSE_IOS_MAIN = "compose_ios_main.kt"
+    const val PLATFORM_IOS = "Platform.ios.kt"
     const val IOS_IOS_APP = "iosapp.swift"
     const val IOS_PROJECT = "project.pbxproj"
     const val IOS_APP_CONFIGURATION = "config.xcconfig"
@@ -30,7 +28,17 @@ object Template {
     const val IOS_ASSETS_CONTENTS_JSON = "assets_contents.json"
     const val IOS_PREVIEW_CONTENTS_JSON = "preview_contents.json"
     const val IOS_INFO_PLIST = "info.plist"
+    const val CONTENTS_XCWORK= "contents.xcworkspacedata"
     const val MY_MAIN_CPP = "my_main.cpp"
+
+    const val GRADLE_PROPERTIES = "gradle.properties"
+    const val SETTINGS_GRADLE = "settings.gradle.kts"
+    const val TOML = "libs.versions.toml"
+    const val GRADLE_WRAPPER_PROPERTIES = "gradle_wrapper.properties"
+    const val GRADLE_KTS = "project_build.gradle.kts"
+    const val COMPOSE_GRADLE_KTS = "compose.gradle.kts"
+    
+    
 
     const val HARMONY_ABOUT= "Harmony about"
     const val GIT_IGNORE = ".gitignore"
@@ -92,5 +100,17 @@ object Template {
     const val ENTRY_SRC_TEST_LOCAL = "LocalUnit.test.ets"
 
     const val HVIGOR_CONFIG = "hvigor-config.json5"
+
+    const val RAW_FILE = "raw_file.h"
+    const val RAW_FILE_MANAGER = "raw_file_manager.h"
+    const val RESOURCE_DEF = "resource.def"
+
+    const val ARKUI_VIEW = "ArkUIView.kt"
+    const val INTEROP_LIST_NESTED = "InteropListNested.kt"
+    const val INTEROP_LIST_SIMPLE = "InteropListSimple.kt"
+    const val INTEROP_RENDER_ORDER = "InteropRenderOrder.kt"
+    const val INTEROP_TEXT_INPUT = "InteropTextInput.kt"
+    const val MAIN_ARK_UI = "MainArkUIViewController.kt"
+    const val PLATFORM_OHOS = "Platform.ohos.kt"
 
 }

@@ -1,0 +1,51 @@
+package ${PACKAGE_NAME}
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.napi.js
+import androidx.compose.ui.unit.dp
+
+@Composable
+internal fun InteropListNested() {
+    LazyColumn(Modifier.fillMaxSize()) {
+        items(20) { index ->
+            when {
+                index == 3 -> {
+                    // Nested Vertical List (ArkUI)
+                    ArkUIView(
+                        name = "verticalList",
+                        modifier = Modifier.fillMaxWidth().height(300.dp).background(Color.LightGray),
+                        parameter = js { }
+                    )
+                }
+                index == 7 -> {
+                    // Horizontal List (ArkUI) - assuming horizontalList exists and works similar
+                    ArkUIView(
+                        name = "horizontalList",
+                        modifier = Modifier.fillMaxWidth().height(150.dp).background(Color.LightGray),
+                        parameter = js { }
+                    )
+                }
+                index % 3 == 0 -> {
+                    // Button (ArkUI)
+                    ArkUIView(
+                        name = "button",
+                        modifier = Modifier.fillMaxWidth().height(60.dp),
+                        parameter = js { 
+                            "text"("ArkUI Button $index") 
+                            "backgroundColor"("#FF0000FF")
+                        }
+                    )
+                }
+                else -> {
+                    // Compose Text
+                    Text("Compose Item $index", Modifier.padding(16.dp))
+                }
+            }
+        }
+    }
+}

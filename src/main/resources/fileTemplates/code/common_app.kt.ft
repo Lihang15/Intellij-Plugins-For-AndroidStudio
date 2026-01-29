@@ -2,36 +2,53 @@ package ${PACKAGE_NAME}
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.material.Button
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import ${APP_NAME_LOWERCASE}.composeapp.generated.resources.Res
-import ${APP_NAME_LOWERCASE}.composeapp.generated.resources.compose_multiplatform
-import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
-@Preview
-fun App() {
+internal fun App() {
     MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
+        // 使用 Page 类型的状态，修复类型推断报错
+        var page by remember { mutableStateOf<com.example.kmptpc_compose_sample.navigation.Page>(com.example.kmptpc_compose_sample.navigation.Page.Home) }
+
+        // 首页状态提升：滚动、搜索、分组展开状态
+        val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+        var searchQuery by remember { mutableStateOf("") }
+        val expandedGroups = remember {
+            mutableStateMapOf<com.example.kmptpc_compose_sample.navigation.ComposeGroup, Boolean>().apply {
+                com.example.kmptpc_compose_sample.navigation.ComposeGroup.entries.forEach { put(it, true) }
             }
-            AnimatedVisibility(showContent) {
-                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Quick Project Wizard")
+        }
+
+        Column(
+            modifier = Modifier
+                .safeContentPadding()
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            when (val p = page) {
+                is com.example.kmptpc_compose_sample.navigation.Page.Home -> {
+                    HomeScreen(
+                        onSelect = { demo ->
+                            page = com.example.kmptpc_compose_sample.navigation.Page.Detail(demo)
+                        },
+                        listState = listState,
+                        searchQuery = searchQuery,
+                        onSearchChange = { searchQuery = it },
+                        expandedGroups = expandedGroups
+                    )
+                }
+                is com.example.kmptpc_compose_sample.navigation.Page.Detail -> {
+                    DemoScreen(demo = p.demo, onBack = { page = com.example.kmptpc_compose_sample.navigation.Page.Home })
                 }
             }
         }

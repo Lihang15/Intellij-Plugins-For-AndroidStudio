@@ -26,7 +26,10 @@ object Utils {
             val dirPath = outputFilePathParts.dropLast(1).joinToString("/")
             val targetDir = VfsUtil.createDirectoryIfMissing(outputDir, dirPath)
                 ?: throw IOException("Failed to create directory: $dirPath")
-            val outputFile = targetDir.createChildData(this, outputFilePathParts.last())
+            
+            val fileName = outputFilePathParts.last()
+            val outputFile = targetDir.findChild(fileName) ?: targetDir.createChildData(null, fileName)
+            
             StringWriter().use { writer ->
                 val template = "${asset.template.name}.${asset.template.extension}"
                 getTemplate("${template}.ft").process(dataModel, writer)
@@ -43,7 +46,9 @@ object Utils {
         val dirPath = outputFilePathParts.dropLast(1).joinToString("/")
         val targetDir = VfsUtil.createDirectoryIfMissing(outputDir, dirPath)
             ?: throw IOException("Failed to create directory: $dirPath")
-        val outputFile = targetDir.createChildData(this, outputFilePathParts.last())
+        
+        val fileName = outputFilePathParts.last()
+        val outputFile = targetDir.findChild(fileName) ?: targetDir.createChildData(null, fileName)
         
         // 从 resources 目录读取文件并复制
         val resourceUrl = asset.resource

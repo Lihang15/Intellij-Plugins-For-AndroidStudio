@@ -1,31 +1,38 @@
 rootProject.name = "${APP_NAME}"
+// 启用类型安全项目访问器特性（Type-safe project accessors）
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
+
+/**
+专门管理 Gradle 插件的解析和应用：
+影响 plugins {} 块中的插件解析
+影响 buildscript {} 块中的插件解析
+影响插件版本管理
+影响插件仓库配置
+只在构建脚本配置阶段生效
+ */
 pluginManagement {
     repositories {
-        google {
-            mavenContent {
-                includeGroupAndSubgroups("androidx")
-                includeGroupAndSubgroups("com.android")
-                includeGroupAndSubgroups("com.google")
-            }
-        }
-        mavenCentral()
+        maven("https://maven.eazytec-cloud.com/nexus/repository/maven-public/")
+        // 引入 Gradle 插件门户（主要用于查找 Gradle 插件）
         gradlePluginPortal()
     }
 }
 
+
+/**
+专门管理项目依赖的解析：
+影响 dependencies {} 块中的依赖解析
+影响 implementation、api、compileOnly 等依赖声明
+影响依赖版本管理
+影响依赖仓库配置
+在整个项目构建过程中生效
+ */
 dependencyResolutionManagement {
     repositories {
-        google {
-            mavenContent {
-                includeGroupAndSubgroups("androidx")
-                includeGroupAndSubgroups("com.android")
-                includeGroupAndSubgroups("com.google")
-            }
-        }
-        mavenCentral()
+        maven("https://maven.eazytec-cloud.com/nexus/repository/maven-public/")
     }
 }
 
+// 包含 composeApp 模块
 include(":composeApp")

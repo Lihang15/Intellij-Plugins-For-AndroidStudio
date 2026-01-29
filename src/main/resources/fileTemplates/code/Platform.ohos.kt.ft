@@ -1,0 +1,23 @@
+package ${PACKAGE_NAME}
+class OhosPlatform : Platform {
+    override val name: String = "HarmonyOS"
+}
+
+actual fun getPlatform(): Platform = OhosPlatform()
+
+internal actual fun getPlatformDemoList(): List<PlatformDemoItem> = listOf(
+    PlatformDemoItem("interop_list_nested", "混排嵌滑"),
+    PlatformDemoItem("interop_list_simple", "混排列表"),
+    PlatformDemoItem("interop_render_order", "混排层级"),
+    PlatformDemoItem("interop_text_input", "混排输入"),
+)
+
+@androidx.compose.runtime.Composable
+internal actual fun PlatformDemo(id: String) {
+    when (id) {
+        "interop_list_nested" -> InteropListNested()
+        "interop_list_simple" -> InteropListSimple()
+        "interop_render_order" -> InteropRenderOrder()
+        "interop_text_input" -> InteropTextInput()
+    }
+}

@@ -1,109 +1,221 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-
+/**
+能导入的包
+1. 来源插件
+在 当前的 build.gradle.kts 定义可以搭配的插件
 plugins {
-    alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidApplication)
-    alias(libs.plugins.composeMultiplatform)
-    alias(libs.plugins.composeCompiler)
+alias(libs.plugins.androidApplication)  // 提供 android.* 相关类
+alias(libs.plugins.kotlinMultiplatform)  // 提供 org.jetbrains.kotlin.gradle.* 相关类
+alias(libs.plugins.composeMultiplatform)  // 提供 compose 相关类
 }
+插件的版本在 libs.versions.toml 中定义：
+2.Gradle 核心类
+Gradle 本身提供的核心类（如 Copy、JavaVersion 等）自动可用，无需额外配置
+ */
+// 导入大写工具（capitalizeUS），用于字符串首字母大写
+import android.databinding.tool.ext.capitalizeUS
+// 导入ExperimentalKotlinGradlePluginApi注解，用于开启Kotlin插件实验特性
+        import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+// 导入JvmTarget，用于指定JVM的目标版本
+        import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+        plugins {
+            // 应用Kotlin多平台插件
+            alias(libs.plugins.kotlinMultiplatform)
+            // 应用Android应用插件
+            alias(libs.plugins.androidApplication)
+            // 应用Compose多平台插件
+            alias(libs.plugins.composeMultiplatform)
+            // 应用Compose编译器插件
+            alias(libs.plugins.composeCompiler)
+        }
+
+
+/**
+Kotlin Multiplatform 配置
+插件 libs.plugins.kotlinMultiplatform
+负责 Kotlin 代码编译
+Android: Kotlin/JVM → .class 文件                          │
+iOS: Kotlin/Native → LLVM IR                              │
+OHOS: Kotlin/Native → LLVM IR
 
 kotlin {
+├── 目标平台 (androidTarget, jvm, iosX64, etc.)
+│   ├── compilerOptions
+│   └── binaries
+├── cocoapods (iOS 特定)
+├── sourceSets
+│   ├── commonMain/commonTest
+│   ├── platformMain/platformTest
+│   └── customSourceSets
+└── 其他配置
+}
+ */
+kotlin {
+    // 配置Android目标
     androidTarget {
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
+        @OptIn(ExperimentalKotlinGradlePluginApi::class) // 允许使用实验API
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_11)
+            jvmTarget.set(JvmTarget.JVM_11)    // 设置JVM target为11
         }
     }
 
-<#if IS_DESKTOP_ENABLE>
-    jvm("desktop")
 
-</#if>
+    // 配置iOS三种架构目标   
+    // 编译配置: Kotlin 源码 → LLVM IR -> 机器码
     listOf(
-        iosX64(),
-        iosArm64(),
-        iosSimulatorArm64()
+        iosX64(),       // iOS 模拟器（x64架构）
+        iosArm64(),     // iOS 真机（arm64架构）
+        iosSimulatorArm64() // iOS 模拟器（arm64架构）
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
-            baseName = "ComposeApp"
-            isStatic = true
+            baseName = "ComposeApp" // 设置framework名称
+            // 静态库 (isStatic = true) - 代码直接嵌入到最终应用中
+            // 动态库 (isStatic = false) - 运行时加载的库
+            isStatic = true         // 设置framework为静态库
         }
     }
-
-    sourceSets {
-<#if IS_DESKTOP_ENABLE>
-        val desktopMain by getting
-
+    
+ <#if IS_HARMONY_ENABLE>
+    // 配置OHOS（华为鸿蒙）arm64目标
+    ohosArm64 {
+        binaries.sharedLib {
+            baseName = "kn" // 共享库名称为kn
+            export(libs.compose.multiplatform.export) // 导出compose多平台库的接口
+        }
+        val main by compilations.getting   // 获取主编译内容
+        val resource by main.cinterops.creating {
+            // 配置C interop（cinterop）资源
+            defFile(file("src/ohosArm64Main/cinterop/resource.def"))        // cinterop定义文件
+            includeDirs(file("src/ohosArm64Main/cinterop/include"))        // cinterop包含目录
+        }
+    }
 </#if>
-        <#if IS_ANDROID_ENABLE>
+
+    // 配置各平台的依赖关系
+    sourceSets {
+      <#if IS_ANDROID_ENABLE>
         androidMain.dependencies {
-            implementation(libs.androidx.compose.ui.tooling.preview)
             implementation(libs.androidx.activity.compose)
-            implementation(libs.kotlinx.coroutines.android)
+            implementation(libs.androidx.collection)
+            implementation(libs.androidx.lifecycle.viewmodelCompose)
+            implementation(libs.androidx.lifecycle.runtimeCompose)
         }
-        </#if>
+         </#if>
         commonMain.dependencies {
-            implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material3)
-            implementation(compose.materialIconsExtended)
-            implementation(compose.ui)
-            implementation(compose.components.resources)
-            implementation(compose.components.uiToolingPreview)
-            implementation(libs.kotlinx.coroutines.core)
+            implementation(compose.runtime)                       // 添加compose runtime依赖
+            implementation(compose.foundation)                    // 添加compose基础依赖
+            implementation(compose.material)                      // 添加compose material依赖
+            implementation(compose.ui)                            // 添加compose ui依赖
+            implementation(compose.components.resources)          // 添加compose组件资源依赖
+            implementation(compose.components.uiToolingPreview)   // 添加compose ui工具预览依赖
+            implementation(libs.kotlinx.coroutines.core)          // 官方协程核心库
+            implementation(libs.atomicFu)                         // Kotlin AtomicFu原子库
         }
-        <#if IS_DESKTOP_ENABLE>
-        desktopMain.dependencies {
-            implementation(compose.desktop.currentOs)
-            implementation(libs.kotlinx.coroutines.swing)
+ <#if IS_HARMONY_ENABLE>
+        val ohosArm64Main by getting {
+            dependencies {
+                api(libs.compose.multiplatform.export) // 导出compose多平台接口给依赖消费者
+            }
         }
-        </#if>
+    </#if>
     }
 }
 
+/**
+应用 AGP : Android Gradle Plugin
+Android 应用构建 : .class → DEX(Dalvik 字节码) → APK                               │
+由 androidApplication 插件提供
+将 .class 文件转换为 DEX(Dalvik 字节码) 文件
+Android 构建工具 → 打包成 APK
+作用：
+配置 Android 应用 的构建行为
+控制 APK 生成、打包、签名等
+ */
 android {
-    namespace = "${PACKAGE_NAME}"
-    compileSdk = 36
+    namespace = "com.example.kmptpc_compose_sample"                      // 设置包名
+    compileSdk = libs.versions.android.compileSdk.get().toInt()  // 指定编译SDK版本
 
     defaultConfig {
-        applicationId = "${PACKAGE_NAME}"
-        minSdk = 24
-        targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        applicationId = "com.example.kmptpc_compose_sample"                   // 应用ID
+        minSdk = libs.versions.android.minSdk.get().toInt()     // 最低SDK版本
+        targetSdk = libs.versions.android.targetSdk.get().toInt()// 目标SDK版本
+        versionCode = 1                                         // 应用版本号
+        versionName = "1.0"                                     // 应用版本名
     }
     packaging {
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"// 排除打包时的冗余license资源文件
         }
     }
     buildTypes {
         getByName("release") {
-            isMinifyEnabled = false
+            isMinifyEnabled = false            // 发布包不混淆代码
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    dependencies {
-        debugImplementation(compose.uiTooling)
+        sourceCompatibility = JavaVersion.VERSION_11     // 源码兼容Java 11
+        targetCompatibility = JavaVersion.VERSION_11     // 输出兼容Java 11
     }
 }
 
-<#if IS_DESKTOP_ENABLE>
-compose.desktop {
-    application {
-        mainClass = "${PACKAGE_NAME}.MainKt"
+dependencies {
+    debugImplementation(libs.compose.ui.tooling)    // debug模式下依赖compose调试工具
+}
 
-        nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "${PACKAGE_NAME}"
-            packageVersion = "1.0.0"
+// 为 ohosArm64 目标配置依赖处理
+val versionCatalog = extensions.getByType<VersionCatalogsExtension>().named("libs")
+val cmpVersion = versionCatalog.findVersion("composeMultiplatform")
+    .orElseThrow { IllegalStateException("Missing version composeMultiplatform in version catalog") }
+    .requiredVersion
+val skikoOverrideByCmpVersion = mapOf(
+    "1.9.2-eazytec-001" to "0.9.22.2-ohos-001",
+    // 仅在需要强制的 CMP 版本这里新增
+)
+val skikoOhosOverride = skikoOverrideByCmpVersion[cmpVersion]
+
+configurations.all {
+    val configName = name
+    if (configName.contains("ohos", ignoreCase = true)) {
+        incoming.afterResolve {
+            val resolvedSkiko = resolutionResult.allComponents
+                .mapNotNull { it.moduleVersion }
+                .firstOrNull { it.group == "org.jetbrains.skiko" && it.name == "skiko" }
+            logger.lifecycle(
+                "Resolved skiko for $configName: " +
+                        (resolvedSkiko?.let { "${'$'}{it.group}:${'$'}{it.name}:${'$'}{it.version}" } ?: "not found")
+            )
+        }
+        // exclude(group = "org.jetbrains.androidx.lifecycle")
+        // exclude(group = "org.jetbrains.androidx.savedstate")
+    }
+    resolutionStrategy {
+        eachDependency {
+            // 如果是 skiko 依赖，检查配置名称是否包含 ohos
+            if (requested.group == "org.jetbrains.skiko" && requested.name == "skiko") {
+                if (configName.contains("ohos", ignoreCase = true)) {
+                    skikoOhosOverride?.let { useVersion(it) }
+                }
+            }
+            // 强制指定 androidx.collection 版本，避免冲突
+            if (requested.group == "androidx.collection" && requested.name == "collection") {
+                useVersion(libs.versions.androidx.collection.get())
+            }
+        }
+    }
+    exclude(group = "androidx.collection", module = "collection-jvm")
+}
+
+// 为不同类型(debug、release)OHOS构建注册Copy任务并发布到Harmony App目录
+arrayOf("debug", "release").forEach { type ->
+    tasks.register<Copy>("publish${'$'}{type.capitalizeUS()}BinariesToHarmonyApp") {
+        group = "harmony" // 归类到harmony任务组
+        dependsOn("link${'$'}{type.capitalizeUS()}SharedOhosArm64") // 依赖于OHOS shared lib的链接任务
+        into(rootProject.file("harmonyApp")) // 输出目标目录
+        from("build/bin/ohosArm64/${'$'}{type}Shared/libkn_api.h") { // 复制头文件
+            into("entry/src/main/cpp/include/")         // 指定目录
+        }
+        from(project.file("build/bin/ohosArm64/${'$'}{type}Shared/libkn.so")) { // 复制共享库文件
+            into("/entry/libs/arm64-v8a/")           // 指定目标目录
         }
     }
 }
-</#if>

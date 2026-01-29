@@ -1,0 +1,14 @@
+package ${PACKAGE_NAME}
+import platform.UIKit.UIDevice
+
+class IOSPlatform: Platform {
+    override val name: String = UIDevice.currentDevice.systemName() + " " + UIDevice.currentDevice.systemVersion
+}
+
+actual fun getPlatform(): Platform = IOSPlatform()
+
+internal actual fun getPlatformDemoList(): List<PlatformDemoItem> = emptyList()
+
+@androidx.compose.runtime.Composable
+internal actual fun PlatformDemo(id: String) {
+}

@@ -5,6 +5,7 @@ import com.intellij.ide.fileTemplates.FileTemplateManager
 import com.intellij.ide.starters.local.GeneratorAsset
 import com.intellij.ide.starters.local.GeneratorEmptyDirectory
 import com.intellij.ide.starters.local.GeneratorTemplateFile
+import com.intellij.ide.starters.local.GeneratorResourceFile
 
 class IOSFileGenerator(params: CMPConfigModel) : FileGenerator(params) {
     override fun generate(ftManager: FileTemplateManager, packageName: String): List<GeneratorAsset> {
@@ -13,7 +14,10 @@ class IOSFileGenerator(params: CMPConfigModel) : FileGenerator(params) {
                 "composeApp/src/iosMain/kotlin/$packageName/MainViewController.kt",
                 ftManager.getCodeTemplate(Template.COMPOSE_IOS_MAIN)
             ),
-            GeneratorEmptyDirectory("iosApp/iosApp.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/configuration"),
+             GeneratorTemplateFile(
+                "iosApp/iosApp.xcodeproj/project.xcworkspace/contents.xcworkspacedata",
+                ftManager.getCodeTemplate(Template.CONTENTS_XCWORK)
+            ),
             GeneratorTemplateFile(
                 "iosApp/iosApp/ContentView.swift",
                 ftManager.getCodeTemplate(Template.IOS_CONTENT_VIEW_SWIFT)
@@ -21,6 +25,11 @@ class IOSFileGenerator(params: CMPConfigModel) : FileGenerator(params) {
             GeneratorTemplateFile(
                 "iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/Contents.json",
                 ftManager.getCodeTemplate(Template.IOS_ICONS_CONTENTS_JSON)
+            ),
+
+            GeneratorResourceFile(
+               "iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/app-icon-1024.png", 
+               this::class.java.classLoader.getResource("static/app-icon-1024.png")!! 
             ),
             GeneratorTemplateFile(
                 "iosApp/iosApp/Assets.xcassets/AccentColor.colorset/Contents.json",

@@ -49,7 +49,7 @@ fun kotlinMultiplatformProjectRecipe(
         "JVM_JAVA_Versions" to "\${System.getProperty(\"java.Versions\")}",
         "IS_ANDROID_ENABLE" to config.isAndroidEnable,
         "IS_IOS_ENABLE" to config.isIOSEnable,
-        "IS_DESKTOP_ENABLE" to config.isHarmonyEnable,
+        "IS_HARMONY_ENABLE" to config.isHarmonyEnable,
         "CMP_AGP" to "8.5.2",
         "CMP_KOTLIN" to "2.1.0",
         "CMP_ACTIVITY_COMPOSE" to "1.9.3",
