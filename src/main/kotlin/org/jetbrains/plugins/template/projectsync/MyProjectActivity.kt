@@ -10,6 +10,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
+import org.jetbrains.plugins.template.projectsync.localproperties.LocalPropertiesListener
+
 
 class MyProjectActivity : ProjectActivity {
 
@@ -33,6 +35,8 @@ class MyProjectActivity : ProjectActivity {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 syncProjectData(project)
+                // 注册 local.properties 文件监听器，自动触发 Gradle Sync
+                LocalPropertiesListener(project).register()
             } catch (e: Exception) {
                 // 捕获所有异常，确保不会阻止项目打开
                 logger.error("Sync failed but project will continue to open", e)

@@ -52,6 +52,7 @@
     </actions>
 
     <extensions defaultExtensionNs="com.intellij">
+     <!-- Project Startup -->
         <postStartupActivity implementation="org.jetbrains.plugins.template.projectsync.MyProjectActivity" />
         
         <!-- Tim LSP Startup Activity (ProjectActivity API) -->
@@ -60,6 +61,10 @@
          <!-- 注册项目级数据服务,项目打开后，sync一些数据，供插件代码全局使用 -->
             <projectService 
         serviceImplementation="org.jetbrains.plugins.template.projectsync.DataSyncService"/>
+        
+        <!-- OHOS 路径服务：存储 local.properties 中的 local.ohos.path -->
+        <projectService
+            serviceImplementation="org.jetbrains.plugins.template.projectsync.localproperties.OhosPathService"/>
         
         <!-- HarmonyOS Device Service -->
         <projectService serviceImplementation="org.jetbrains.plugins.template.device.DeviceService"/>
@@ -210,6 +215,10 @@
         <!-- Run Configuration Listener for HarmonyOS Device Selection -->
         <listener class="org.jetbrains.plugins.template.device.RunConfigurationListener"
                   topic="com.intellij.execution.RunManagerListener"/>
+        
+        <!-- OHOS PostSync Listener: 监听 Gradle Sync 完成事件 -->
+        <listener class="org.jetbrains.plugins.template.projectsync.localproperties.OhosPostSyncExtension"
+                  topic="com.android.tools.idea.gradle.project.sync.GradleSyncListenerWithRoot"/>
     </projectListeners>
     
     <!-- Application Listeners -->
