@@ -41,7 +41,7 @@ src/main/resources/fileTemplates/code/
 
 ### 1.3 模板常量定义
 
-**文件**: `wizard/projectwizard/cmparch/Template.kt`
+**文件**: `wizard/projectwizard/kmparch/Template.kt`
 
 ```kotlin
 object Template {
@@ -590,10 +590,10 @@ recipe = { data: TemplateData ->
 }
 ```
 
-**步骤 2: 在 CMPConfigModel.kt 中添加状态**
+**步骤 2: 在 KMPConfigModel.kt 中添加状态**
 
 ```kotlin
-class CMPConfigModel : WizardModel() {
+class KMPConfigModel : WizardModel() {
     // ...
     var isSQLDelightEnable: Boolean by mutableStateOf(false)
 }
@@ -606,7 +606,7 @@ fun composeMultiplatformProjectRecipe(
     // ...
     isSQLDelightEnable: Boolean,
 ) {
-    val config = CMPConfigModel().apply {
+    val config = KMPConfigModel().apply {
         // ...
         this.isSQLDelightEnable = isSQLDelightEnable
     }

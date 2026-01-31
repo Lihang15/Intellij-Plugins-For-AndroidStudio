@@ -78,7 +78,7 @@
 - ✅ 删除 recipe 调用中的相关参数
 - ✅ 删除 import 语句中的 `CMPImageLibrary` 和 `CMPNetworkLibrary`
 
-#### `CMPConfigModel.kt`
+#### `KMPConfigModel.kt`
 **修改内容**:
 - ✅ 删除 `selectedNetworkLibrary` 字段
 - ✅ 删除 `isRoomEnable` 字段

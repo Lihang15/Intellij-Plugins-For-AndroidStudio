@@ -1,4 +1,4 @@
-package wizard.projectwizard.cmparch
+package wizard.projectwizard.kmparch
 
 object Template {
     const val ANDROID_ABOUT= "Android about"

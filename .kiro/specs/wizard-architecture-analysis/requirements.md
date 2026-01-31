@@ -51,7 +51,7 @@ class AndroidStudioTemplateProvider : WizardTemplateProvider() {
 | `isDataDomainDiUiEnable` | Boolean | false | 是否启用分层架构 |
 | `screens` | String | "" | 要创建的屏幕列表 |
 
-### 2.2 数据模型 (CMPConfigModel.kt)
+### 2.2 数据模型 (KMPConfigModel.kt)
 
 **作用**: 存储用户选择的配置
 - 继承自 `WizardModel`
@@ -65,7 +65,7 @@ class AndroidStudioTemplateProvider : WizardTemplateProvider() {
 **主要步骤**:
 1. **解析用户输入**: 处理屏幕列表、包名等
 2. **生成代码片段**: 根据配置生成导航代码、ViewModel 注册等
-3. **构建配置对象**: 创建 `CMPConfigModel` 实例
+3. **构建配置对象**: 创建 `KMPConfigModel` 实例
 4. **准备数据模型**: 创建模板变量映射 (dataModel)
 5. **选择文件生成器**: 根据平台选择创建对应的生成器
 6. **生成文件**: 调用生成器创建项目文件
@@ -79,7 +79,7 @@ class AndroidStudioTemplateProvider : WizardTemplateProvider() {
 
 **基类**: `FileGenerator` (抽象类)
 ```kotlin
-abstract class FileGenerator(protected val params: CMPConfigModel) {
+abstract class FileGenerator(protected val params: KMPConfigModel) {
     abstract fun generate(ftManager: FileTemplateManager, packageName: String): List<GeneratorAsset>
 }
 ```
@@ -138,7 +138,7 @@ IDE 显示向导 UI（根据 widgets 定义）
    - 生成导航代码片段
    - 生成 ViewModel 注册代码
     ↓
-2. 创建 CMPConfigModel
+2. 创建 KMPConfigModel
    - 存储所有配置参数
     ↓
 3. 构建 dataModel (Map<String, Any>)
@@ -203,7 +203,7 @@ IDE 显示向导 UI（根据 widgets 定义）
     ↓
 KMPTemplate 参数
     ↓
-CMPConfigModel (配置对象)
+KMPConfigModel (配置对象)
     ↓
 dataModel (模板变量 Map)
     ↓
@@ -229,7 +229,7 @@ FreeMarker 模板处理
 ### 7.2 添加新库支持
 
 1. 在 `KMPTemplate.kt` 中添加新参数
-2. 在 `CMPConfigModel.kt` 中添加状态字段
+2. 在 `KMPConfigModel.kt` 中添加状态字段
 3. 在 `dataModel` 中添加对应变量
 4. 在 `CommonFileGenerator` 中添加条件生成逻辑
 5. 创建对应的模板文件

@@ -6,7 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.android.tools.idea.wizard.model.WizardModel
 
-class CMPConfigModel : WizardModel() {
+class KMPConfigModel : WizardModel() {
     var isAndroidEnable: Boolean by mutableStateOf(false)
     var isIOSEnable: Boolean by mutableStateOf(false)
     var isHarmonyEnable: Boolean by mutableStateOf(false)

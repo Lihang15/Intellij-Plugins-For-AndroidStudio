@@ -112,7 +112,7 @@ composeMultiplatformProjectRecipe()
     │   └─ 生成 viewModelModule (Koin 模块)
     │
     ├─ 2. 创建配置对象
-    │   └─ CMPConfigModel
+    │   └─ KMPConfigModel
     │       ├─ isAndroidEnable
     │       ├─ isIOSEnable
     │       ├─ isHarmonyEnable
@@ -272,7 +272,7 @@ Utils.generateFileFromTemplate()
          │
          ▼
 ┌─────────────────┐
-│ CMPConfigModel  │
+│ KMPConfigModel  │
 │  配置状态对象    │
 │  - isAndroid    │
 │  - isIOS        │

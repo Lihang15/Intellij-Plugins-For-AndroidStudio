@@ -88,18 +88,18 @@ val platforms: List<FileGenerator> = listOfNotNull(
 platforms: List<FileGenerator>
     │
     ├─ CommonFileGenerator (总是存在)
-    │   ├─ params: CMPConfigModel
+    │   ├─ params: KMPConfigModel
     │   ├─ dataModel: Map<String, Any>
     │   └─ virtualFile: VirtualFile
     │
     ├─ AndroidFileGenerator (条件: isAndroidEnable)
-    │   └─ params: CMPConfigModel
+    │   └─ params: KMPConfigModel
     │
     ├─ IOSFileGenerator (条件: isIOSEnable)
-    │   └─ params: CMPConfigModel
+    │   └─ params: KMPConfigModel
     │
     └─ HarmonyFileGenerator (条件: isHarmonyEnable)
-        └─ params: CMPConfigModel
+        └─ params: KMPConfigModel
 ```
 
 ### 示例
@@ -126,7 +126,7 @@ platforms = [
 ### FileGenerator 接口
 
 ```kotlin
-abstract class FileGenerator(protected val params: CMPConfigModel) {
+abstract class FileGenerator(protected val params: KMPConfigModel) {
     abstract fun generate(
         ftManager: FileTemplateManager, 
         packageName: String
@@ -401,12 +401,12 @@ val template = ftManager.getCodeTemplate("common_app.kt")
 
 **模板位置**: `src/main/resources/fileTemplates/code/`
 
-### CMPConfigModel
+### KMPConfigModel
 
 **作用**: 存储用户的配置选项
 
 ```kotlin
-class CMPConfigModel {
+class KMPConfigModel {
     var isAndroidEnable: Boolean
     var isIOSEnable: Boolean
     var isHarmonyEnable: Boolean

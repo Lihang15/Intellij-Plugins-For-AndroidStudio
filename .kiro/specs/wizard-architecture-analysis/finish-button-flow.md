@@ -212,7 +212,7 @@ fun composeMultiplatformProjectRecipe(...) {
     val screenList = screens.split(",")...
     
     // 2. 创建配置对象
-    val config = CMPConfigModel().apply { ... }
+    val config = KMPConfigModel().apply { ... }
     
     // 3. 构建数据模型
     val dataModel = mutableMapOf(...)

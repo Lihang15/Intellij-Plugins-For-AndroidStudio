@@ -77,7 +77,7 @@
 - ✅ `Template.kt` - 模板常量定义
 
 ### Data 类
-- ✅ `CMPConfigModel.kt` - 配置模型
+- ✅ `KMPConfigModel.kt` - 配置模型
 - ✅ `QPWEvent.kt` - 分析事件模型
 - ✅ `VersionModel.kt` - 版本模型
 
@@ -107,7 +107,7 @@ src/main/kotlin/wizard/
     ├── KMPTemplate.kt                    ✅
     ├── ProjectGenerationHelper.kt        ✅
     │
-    ├── cmparch/
+    ├── kmparch/
     │   ├── AndroidFileGenerator.kt       ✅
     │   ├── CommonFileGenerator.kt        ✅
     │   ├── HarmonyFileGenerator.kt       ✅
@@ -116,7 +116,7 @@ src/main/kotlin/wizard/
     │   └── Template.kt                   ✅
     │
     ├── data/
-    │   ├── CMPConfigModel.kt             ✅
+    │   ├── KMPConfigModel.kt             ✅
     │   ├── QPWEvent.kt                   ✅
     │   └── VersionModel.kt               ✅
     │

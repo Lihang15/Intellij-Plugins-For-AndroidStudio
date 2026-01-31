@@ -1,12 +1,12 @@
-package wizard.projectwizard.cmparch
+package wizard.projectwizard.kmparch
 
-import wizard.projectwizard.data.CMPConfigModel
+import wizard.projectwizard.data.KMPConfigModel
 import com.intellij.ide.fileTemplates.FileTemplateManager
 import com.intellij.ide.starters.local.GeneratorAsset
 import com.intellij.ide.starters.local.GeneratorTemplateFile
 import com.intellij.ide.starters.local.GeneratorResourceFile
 
-class AndroidFileGenerator(params: CMPConfigModel) : FileGenerator(params) {
+class AndroidFileGenerator(params: KMPConfigModel) : FileGenerator(params) {
     override fun generate(ftManager: FileTemplateManager, packageName: String): List<GeneratorAsset> {
         return listOf(
             GeneratorTemplateFile(

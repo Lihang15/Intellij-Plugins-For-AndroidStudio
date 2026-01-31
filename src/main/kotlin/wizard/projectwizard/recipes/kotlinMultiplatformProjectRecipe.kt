@@ -2,10 +2,9 @@ package wizard.projectwizard.recipes
 
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
-import wizard.projectwizard.service.AnalyticsService
 import wizard.common.Utils
-import wizard.projectwizard.data.CMPConfigModel
-import wizard.projectwizard.cmparch.*
+import wizard.projectwizard.data.KMPConfigModel
+import wizard.projectwizard.kmparch.*
 import com.intellij.ide.fileTemplates.FileTemplateManager
 import com.intellij.ide.starters.local.GeneratorAsset
 import com.intellij.ide.starters.local.GeneratorEmptyDirectory
@@ -23,11 +22,11 @@ fun kotlinMultiplatformProjectRecipe(
     isIosEnable: Boolean,
     isHarmonyEnable: Boolean,
 ) {
-    val analyticsService = AnalyticsService.getInstance()
+
     val (projectData, _, _) = moduleData
     val packagePath = escapeKotlinIdentifier(packageName)
 
-    val config = CMPConfigModel().apply {
+    val config = KMPConfigModel().apply {
         this.isAndroidEnable = isAndroidEnable
         this.isIOSEnable = isIosEnable
         this.isHarmonyEnable = isHarmonyEnable
@@ -119,7 +118,6 @@ fun kotlinMultiplatformProjectRecipe(
         logger.info("Project generation complete: $filesCreated files created, $filesSkipped skipped")
         generationHelper.flushVfsRefreshSync(this)
     }
-    analyticsService.track("compose_multiplatform_project_created")
 
     Utils.showInfo(
         title = "Quick Project Wizard",
