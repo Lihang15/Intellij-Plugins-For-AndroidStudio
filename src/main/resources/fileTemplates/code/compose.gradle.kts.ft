@@ -168,7 +168,7 @@ val cmpVersion = versionCatalog.findVersion("composeMultiplatform")
     .orElseThrow { IllegalStateException("Missing version composeMultiplatform in version catalog") }
     .requiredVersion
 val skikoOverrideByCmpVersion = mapOf(
-    "1.9.2-eazytec-001" to "0.9.22.2-ohos-001",
+   "1.9.2-ez-001" to "0.9.22.2-ez-001",
     // 仅在需要强制的 CMP 版本这里新增
 )
 val skikoOhosOverride = skikoOverrideByCmpVersion[cmpVersion]

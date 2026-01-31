@@ -44,7 +44,7 @@ val kotlinMultiplatformTemplate = template {
         PackageNameWidget(defaultPackageNameParameter)
     )
 
-    thumb = { getImage("KMPTemplate", "test") }
+    thumb = { getImage("KMPTemplate", "ohos") }
 
     recipe = { data: TemplateData ->
         kotlinMultiplatformProjectRecipe(

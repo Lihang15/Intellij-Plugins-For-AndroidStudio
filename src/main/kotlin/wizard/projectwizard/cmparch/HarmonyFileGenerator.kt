@@ -152,7 +152,7 @@ class HarmonyFileGenerator(params: CMPConfigModel) : FileGenerator(params) {
                ftManager.getCodeTemplate(Template.ENTRY_SRC_MAIN_CPP_TYPES_LIBENTRY_INDEX) 
             ),
             GeneratorTemplateFile(
-               "harmonyApp/entry/src/main/cpp/types/libentry/on-package.json5", 
+               "harmonyApp/entry/src/main/cpp/types/libentry/oh-package.json5", 
                ftManager.getCodeTemplate(Template.ENTRY_SRC_MAIN_CPP_TYPES_LIBENTRY_OH) 
             ),
             GeneratorTemplateFile(

@@ -6,8 +6,9 @@ object Template {
     const val PLATFORM_ANDROID = "Platform.android.kt"
     const val ANDROID_MANIFEST = "android_manifest.xml"
 
-    const val DRAWABLE = "ic_lancher_background.xml"
-    const val DRAWABLE_V24 = "ic_lancher_foreground.xml"
+                          
+    const val DRAWABLE = "ic_launcher_background.xml"
+    const val DRAWABLE_V24 = "ic_launcher_foreground.xml"
     const val MIPMAP_ANYDPI_V26_IC = "ic_launcher.xml"
     const val MIPMAP_ANYDPI_V26_IC_ROUND = "ic_launcher_round.xml"
     const val VALUES = "strings.xml"
@@ -110,7 +111,7 @@ object Template {
 
     const val ENTRY_SRC_MAIN_CPP_INCLUDE_LIB = "libkn_api.h"
     const val ENTRY_SRC_MAIN_CPP_TYPES_LIBENTRY_INDEX = "Index.d.ts"
-    const val ENTRY_SRC_MAIN_CPP_TYPES_LIBENTRY_OH = "on-package.json5"
+    const val ENTRY_SRC_MAIN_CPP_TYPES_LIBENTRY_OH = "lib_oh-package.json5"
 
     const val ENTRY_SRC_MAIN_ETS_ENTRYABILITY = "EntryAbility.ets"
     const val ENTRY_SRC_MAIN_ETS_ENTRYBACK = "EntryBackupAbility.ets"
