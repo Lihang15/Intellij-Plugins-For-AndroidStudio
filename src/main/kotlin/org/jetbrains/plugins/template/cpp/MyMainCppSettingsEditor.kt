@@ -33,7 +33,8 @@ class MyMainCppSettingsEditor(private val project: Project) : SettingsEditor<MyM
         updateDeviceList()
 
         panel = FormBuilder.createFormBuilder()
-            .addLabeledComponent(JBLabel("目标设备:"), deviceComboBox, 1, false)
+            // 注释掉默认的"目标设备"面板，避免与自定义设备列表组件冲突
+            // .addLabeledComponent(JBLabel("目标设备:"), deviceComboBox, 1, false)
             .addComponentFillVertically(JPanel(), 0)
             .panel
         

@@ -12,6 +12,9 @@ import com.intellij.openapi.module.ModuleTypeManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.vfs.VfsUtil
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
@@ -33,10 +36,13 @@ class OhosPostSyncExtension : GradleSyncListenerWithRoot {
         logger.info("=== OhosPostSyncExtension: Gradle Sync 成功 ===")
         logger.info("Project: ${project.name}, Root: $rootProjectPath")
         
-        try {
-            processOhosPath(project)
-        } catch (e: Exception) {
-            logger.error("处理 OHOS 路径时出错", e)
+        // 使用后台线程处理，避免在 EDT 上执行耗时操作
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                processOhosPath(project)
+            } catch (e: Exception) {
+                logger.error("处理 OHOS 路径时出错", e)
+            }
         }
     }
 
