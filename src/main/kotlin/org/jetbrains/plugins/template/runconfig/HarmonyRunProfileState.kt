@@ -1,4 +1,4 @@
-package org.jetbrains.plugins.template.cpp
+package org.jetbrains.plugins.template.runconfig
 
 import com.intellij.execution.ExecutionException
 import com.intellij.execution.configurations.CommandLineState
@@ -15,12 +15,12 @@ import java.io.File
 /**
  * 运行状态 - 负责实际的编译和执行
  */
-class MyMainCppRunProfileState(
+class HarmonyRunProfileState(
     environment: ExecutionEnvironment
 ) : CommandLineState(environment) {
 
     override fun startProcess(): ProcessHandler {
-        val configuration = environment.runProfile as MyMainCppRunConfiguration
+        val configuration = environment.runProfile as HarmonyRunConfiguration
         val project = configuration.project
 
         // 从 DeviceService 获取选中的设备
@@ -36,7 +36,7 @@ class MyMainCppRunProfileState(
         println("目标设备: ${selectedDevice.displayName} (${selectedDevice.deviceId})")
 
         // 获取文件路径
-        val cppFilePath = configuration.getMyMainCppPath()
+        val cppFilePath = configuration.getHarmonyPath()
             ?: throw ExecutionException("找不到 my_main.cpp 文件")
         
         val outputPath = configuration.getOutputPath()

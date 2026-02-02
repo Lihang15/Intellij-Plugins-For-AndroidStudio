@@ -8,7 +8,7 @@
 
 ### 2. 断点设置到 LLDB ✅
 ```
-Breakpoint 2: where = mymaincpp`main + 44 at my_main.cpp:11:15
+Breakpoint 2: where = Harmony`main + 44 at my_main.cpp:11:15
 [setBreakpoint] 结果: 成功
 ```
 
@@ -28,13 +28,13 @@ Process 24624 stopped
 
 **格式 1**（没有 `*`）：
 ```
-frame #0: 0x... mymaincpp`main at my_main.cpp:11:15
+frame #0: 0x... Harmony`main at my_main.cpp:11:15
 frame #1: 0x... dyld`start + 6076
 ```
 
 **格式 2**（有 `*` 表示当前帧）：
 ```
-* frame #0: 0x... mymaincpp`main at my_main.cpp:11:15
+* frame #0: 0x... Harmony`main at my_main.cpp:11:15
   frame #1: 0x... dyld`start + 6076
 ```
 

@@ -1,7 +1,7 @@
 ```mermaid
 sequenceDiagram
     participant IDE as IntelliJ IDE
-    participant Runner as MyMainCppDebugRunner
+    participant Runner as HarmonyDebugRunner
     participant Proc as LLDBDebugProcess
     participant Service as LLDBServiceWrapper
     participant BP as LLDBBreakpointHandler

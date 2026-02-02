@@ -8,7 +8,7 @@ import com.intellij.openapi.ui.Messages
 
 /**
  * 用于测试 LLDB 调试功能的 Action
- * 当前已集成到 MyMainCppDebugRunner，此 Action 仅作为预留
+ * 当前已集成到 HarmonyDebugRunner，此 Action 仅作为预留
  */
 class StartLldbAction : AnAction() {
 

@@ -26,7 +26,7 @@ This implementation plan refactors the plugin's project creation and synchroniza
     - Delete the `thisLogger().warn()` call
     - _Requirements: 7.1_
 
-  - [x] 2.2 Refactor autoCreateMyMainAppConfiguration for efficiency
+  - [x] 2.2 Refactor autoCreateharmonyAppConfiguration for efficiency
     - Optimize duplicate checking logic
     - Add early returns for better performance
     - _Requirements: 7.2_
@@ -183,7 +183,7 @@ This implementation plan refactors the plugin's project creation and synchroniza
   - **Validates: Requirements 6.3**
 
 - [x] 9. Implement run configuration duplicate prevention
-  - [x] 9.1 Optimize duplicate checking in autoCreateMyMainAppConfiguration
+  - [x] 9.1 Optimize duplicate checking in autoCreateharmonyAppConfiguration
     - Use efficient allSettings.any() check
     - Add early return if duplicate found
     - _Requirements: 7.2_

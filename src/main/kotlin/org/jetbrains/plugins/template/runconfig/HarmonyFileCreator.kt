@@ -1,4 +1,4 @@
-package org.jetbrains.plugins.template.cpp
+package org.jetbrains.plugins.template.runconfig
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtil
@@ -7,13 +7,13 @@ import java.io.File
 /**
  * Helper to create my_main.cpp file if it doesn't exist.
  */
-object MyMainCppFileCreator {
+object HarmonyFileCreator {
     
     private const val DEFAULT_CPP_CONTENT = """
 #include <iostream>
 
 int main() {
-    std::cout << "Hello from MyMainApp!" << std::endl;
+    std::cout << "Hello from harmonyApp!" << std::endl;
     return 0;
 }
 """
@@ -22,21 +22,21 @@ int main() {
      * Creates my_main.cpp in the project root if it doesn't exist.
      * Returns true if file was created or already exists.
      */
-    fun ensureMyMainCppExists(project: Project): Boolean {
+    fun ensureHarmonyExists(project: Project): Boolean {
         val basePath = project.basePath ?: return false
-        val myMainCppFile = File(basePath, "my_main.cpp")
+        val HarmonyFile = File(basePath, "my_main.cpp")
         
-        if (myMainCppFile.exists()) {
+        if (HarmonyFile.exists()) {
             return true
         }
         
         return try {
-            myMainCppFile.writeText(DEFAULT_CPP_CONTENT.trimIndent())
+            HarmonyFile.writeText(DEFAULT_CPP_CONTENT.trimIndent())
             
             // Refresh VFS to make IDE aware of the new file
-            VfsUtil.markDirtyAndRefresh(false, false, false, myMainCppFile)
+            VfsUtil.markDirtyAndRefresh(false, false, false, HarmonyFile)
             
-            println("Created my_main.cpp at: ${myMainCppFile.absolutePath}")
+            println("Created my_main.cpp at: ${HarmonyFile.absolutePath}")
             true
         } catch (e: Exception) {
             println("Failed to create my_main.cpp: ${e.message}")

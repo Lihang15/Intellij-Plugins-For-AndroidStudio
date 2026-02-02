@@ -1,4 +1,4 @@
-package org.jetbrains.plugins.template.cpp
+package org.jetbrains.plugins.template.runconfig
 
 import com.intellij.execution.ExecutionException
 import com.intellij.execution.configurations.RunProfile
@@ -15,30 +15,30 @@ import org.jetbrains.plugins.template.debuger.LLDBDebugProcess
 import java.io.File
 
 /**
- * MyMainApp 的 Debug Runner：
+ * harmonyApp 的 Debug Runner：
  * - 只对 Debug Executor 生效（Run 逻辑仍走默认 Runner）
- * - 先编译 my_main.cpp 生成 mymaincpp 可执行文件
+ * - 先编译 my_main.cpp 生成 Harmony 可执行文件
  * - 启动 XDebugSession + LLDBDebugProcess，连接 lldb-_ 调试器
  */
-class MyMainCppDebugRunner : GenericProgramRunner<RunnerSettings>() {
+class HarmonyDebugRunner : GenericProgramRunner<RunnerSettings>() {
 
-    override fun getRunnerId(): String = "MyMainCppDebugRunner"
+    override fun getRunnerId(): String = "HarmonyDebugRunner"
 
     override fun canRun(executorId: String, profile: RunProfile): Boolean {
-        return executorId == DefaultDebugExecutor.EXECUTOR_ID && profile is MyMainCppRunConfiguration
+        return executorId == DefaultDebugExecutor.EXECUTOR_ID && profile is HarmonyRunConfiguration
     }
 
     override fun doExecute(state: RunProfileState, environment: ExecutionEnvironment): RunContentDescriptor? {
-        println("\n========== [MyMainCppDebugRunner.doExecute] 函数调用 ==========")
+        println("\n========== [HarmonyDebugRunner.doExecute] 函数调用 ==========")
         
-        val configuration = environment.runProfile as? MyMainCppRunConfiguration
+        val configuration = environment.runProfile as? HarmonyRunConfiguration
             ?: throw ExecutionException("Invalid configuration")
         
         val project = configuration.project
         println("[doExecute] 项目: ${project.name}")
         
         // 1. 先编译 C++ 程序
-        val cppFilePath = configuration.getMyMainCppPath()
+        val cppFilePath = configuration.getHarmonyPath()
             ?: throw ExecutionException("找不到 my_main.cpp 文件")
         
         val outputPath = configuration.getOutputPath()
@@ -68,7 +68,7 @@ class MyMainCppDebugRunner : GenericProgramRunner<RunnerSettings>() {
         )
         
         println("[doExecute] ✓ 调试会话已启动")
-        println("========== [MyMainCppDebugRunner.doExecute] 函数结束 ==========\n")
+        println("========== [HarmonyDebugRunner.doExecute] 函数结束 ==========\n")
         
         return debugSession.runContentDescriptor
     }
@@ -77,7 +77,7 @@ class MyMainCppDebugRunner : GenericProgramRunner<RunnerSettings>() {
      * 编译 C++ 文件
      */
     private fun compile(cppFilePath: String, outputPath: String): Boolean {
-        println("\n========== [MyMainCppDebugRunner.compile] 函数调用 ==========")
+        println("\n========== [HarmonyDebugRunner.compile] 函数调用 ==========")
         println("[compile] 源文件: $cppFilePath")
         println("[compile] 输出文件: $outputPath")
         
@@ -107,17 +107,17 @@ class MyMainCppDebugRunner : GenericProgramRunner<RunnerSettings>() {
                 val errorOutput = process.errorStream.bufferedReader().readText()
                 println("[compile] ✗ 编译错误:")
                 println(errorOutput)
-                println("========== [MyMainCppDebugRunner.compile] 编译失败 ==========\n")
+                println("========== [HarmonyDebugRunner.compile] 编译失败 ==========\n")
                 false
             } else {
                 println("[compile] ✓ 编译成功")
-                println("========== [MyMainCppDebugRunner.compile] 编译成功 ==========\n")
+                println("========== [HarmonyDebugRunner.compile] 编译成功 ==========\n")
                 true
             }
         } catch (e: Exception) {
             println("[compile] ✗ 编译异常: ${e.message}")
             e.printStackTrace()
-            println("========== [MyMainCppDebugRunner.compile] 编译异常 ==========\n")
+            println("========== [HarmonyDebugRunner.compile] 编译异常 ==========\n")
             false
         }
     }

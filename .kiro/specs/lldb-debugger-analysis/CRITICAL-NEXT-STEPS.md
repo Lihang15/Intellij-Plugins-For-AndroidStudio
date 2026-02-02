@@ -58,7 +58,7 @@
 
 ```
 ========== [LLDBDebugProcess.init] 开始 ==========
-[LLDBDebugProcess.init] 可执行文件: /Users/admin/AndroidStudioProjects/faksbda/mymaincpp
+[LLDBDebugProcess.init] 可执行文件: /Users/admin/AndroidStudioProjects/faksbda/Harmony
 [LLDBDebugProcess.init] Session: faksbda
 [LLDBDebugProcess.init] BreakpointHandler 类型: org.jetbrains.plugins.template.debuger.LLDBBreakpointHandler
 [LLDBDebugProcess.init] 支持的断点类型: org.jetbrains.plugins.template.debuger.LLDBLineBreakpointType
@@ -72,7 +72,7 @@
 ========== [LLDBDebugProcess.getBreakpointHandlers] 结束 ==========
 
 ========== [LLDBDebugProcess.sessionInitialized] 开始 ==========
-[sessionInitialized] 可执行文件: /Users/admin/AndroidStudioProjects/faksbda/mymaincpp
+[sessionInitialized] 可执行文件: /Users/admin/AndroidStudioProjects/faksbda/Harmony
 [sessionInitialized] 断点管理器中的所有断点数量: X
 ...
 ```
@@ -95,7 +95,7 @@
 
 ### 在控制台（stdout）：
 ```
-========== [MyMainCppDebugRunner.doExecute] 函数调用 ==========
+========== [HarmonyDebugRunner.doExecute] 函数调用 ==========
 [doExecute] 项目: faksbda
 ...
 [doExecute] 创建 LLDBDebugProcess
@@ -106,7 +106,7 @@
 ========== [LLDBDebugProcess.init] 结束 ==========    <-- 新增！
 
 [doExecute] ✓ 调试会话已启动
-========== [MyMainCppDebugRunner.doExecute] 函数结束 ==========
+========== [HarmonyDebugRunner.doExecute] 函数结束 ==========
 
 ========== [LLDBDebugProcess.getBreakpointHandlers] 被调用 ==========  <-- 新增！
 ...

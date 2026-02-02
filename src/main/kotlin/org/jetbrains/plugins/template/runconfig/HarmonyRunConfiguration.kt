@@ -1,4 +1,4 @@
-package org.jetbrains.plugins.template.cpp
+package org.jetbrains.plugins.template.runconfig
 
 import com.intellij.execution.Executor
 import com.intellij.execution.configurations.ConfigurationFactory
@@ -13,28 +13,28 @@ import org.jetbrains.plugins.template.device.HarmonyDevice
 import java.io.File
 
 /**
- * MyMainCpp 运行配置
+ * Harmony 运行配置
  */
-class MyMainCppRunConfiguration(
+class HarmonyRunConfiguration(
     project: Project,
     factory: ConfigurationFactory,
     name: String
-) : RunConfigurationBase<MyMainCppRunConfigurationOptions>(project, factory, name) {
+) : RunConfigurationBase<HarmonyRunConfigurationOptions>(project, factory, name) {
 
-    override fun getOptions(): MyMainCppRunConfigurationOptions {
-        return super.getOptions() as MyMainCppRunConfigurationOptions
+    override fun getOptions(): HarmonyRunConfigurationOptions {
+        return super.getOptions() as HarmonyRunConfigurationOptions
     }
 
     override fun getConfigurationEditor(): SettingsEditor<out RunConfiguration> {
-        println("=== MyMainCppRunConfiguration.getConfigurationEditor() CALLED ===")
+        println("=== HarmonyRunConfiguration.getConfigurationEditor() CALLED ===")
         println("Project: ${project.name}")
-        val editor = MyMainCppSettingsEditor(project)
+        val editor = HarmonySettingsEditor(project)
         println("Editor created: $editor")
         return editor
     }
 
     override fun getState(executor: Executor, environment: ExecutionEnvironment): RunProfileState {
-        return MyMainCppRunProfileState(environment)
+        return HarmonyRunProfileState(environment)
     }
 
     /**
@@ -63,16 +63,16 @@ class MyMainCppRunConfiguration(
     /**
      * 检查项目中是否存在 my_main.cpp 文件
      */
-    fun hasMyMainCppFile(): Boolean {
+    fun hasHarmonyFile(): Boolean {
         val projectPath = project.basePath ?: return false
-        val myMainCppFile = File(projectPath, "my_main.cpp")
-        return myMainCppFile.exists()
+        val HarmonyFile = File(projectPath, "my_main.cpp")
+        return HarmonyFile.exists()
     }
 
     /**
      * 获取 my_main.cpp 文件的完整路径
      */
-    fun getMyMainCppPath(): String? {
+    fun getHarmonyPath(): String? {
         val projectPath = project.basePath ?: return null
         return File(projectPath, "my_main.cpp").absolutePath
     }
@@ -82,6 +82,6 @@ class MyMainCppRunConfiguration(
      */
     fun getOutputPath(): String? {
         val projectPath = project.basePath ?: return null
-        return File(projectPath, "mymaincpp").absolutePath
+        return File(projectPath, "Harmony").absolutePath
     }
 }

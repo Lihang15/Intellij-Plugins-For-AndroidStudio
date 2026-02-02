@@ -10,7 +10,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
-import org.jetbrains.plugins.template.cpp.MyMainCppRunConfiguration
+import org.jetbrains.plugins.template.runconfig.HarmonyRunConfiguration
 import java.util.concurrent.atomic.AtomicReference
 
 /**

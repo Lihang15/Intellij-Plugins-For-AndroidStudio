@@ -1,4 +1,4 @@
-package org.jetbrains.plugins.template.cpp
+package org.jetbrains.plugins.template.runconfig
 
 import com.intellij.execution.actions.ConfigurationContext
 import com.intellij.execution.actions.LazyRunConfigurationProducer
@@ -13,22 +13,22 @@ import org.jetbrains.plugins.template.projectsync.DataSyncService
 /**
  * 运行配置生产者 - 自动检测并创建运行配置
  */
-class MyMainCppRunConfigurationProducer : LazyRunConfigurationProducer<MyMainCppRunConfiguration>() {
+class HarmonyRunConfigurationProducer : LazyRunConfigurationProducer<HarmonyRunConfiguration>() {
 
     override fun getConfigurationFactory(): ConfigurationFactory {
-        return MyMainCppConfigurationType.getInstance().configurationFactories[0]
+        return HarmonyConfigurationType.getInstance().configurationFactories[0]
     }
 
     override fun isConfigurationFromContext(
-        configuration: MyMainCppRunConfiguration,
+        configuration: HarmonyRunConfiguration,
         context: ConfigurationContext
     ): Boolean {
         // 检查项目中是否存在 my_main.cpp
-        return configuration.hasMyMainCppFile()
+        return configuration.hasHarmonyFile()
     }
 
     override fun setupConfigurationFromContext(
-        configuration: MyMainCppRunConfiguration,
+        configuration: HarmonyRunConfiguration,
         context: ConfigurationContext,
         sourceElement: Ref<PsiElement>
     ): Boolean {
@@ -40,13 +40,13 @@ class MyMainCppRunConfigurationProducer : LazyRunConfigurationProducer<MyMainCpp
 
 
         // 检查项目根目录下是否存在 my_main.cpp
-        val myMainCppFile = File(projectPath, "my_main.cpp")
-        if (!myMainCppFile.exists()) {
+        val HarmonyFile = File(projectPath, "my_main.cpp")
+        if (!HarmonyFile.exists()) {
             return false
         }
 
         // 设置运行配置名称
-        configuration.name = "MyMainApp"
+        configuration.name = "harmonyApp"
         return true
     }
 
@@ -58,7 +58,7 @@ class MyMainCppRunConfigurationProducer : LazyRunConfigurationProducer<MyMainCpp
         val model = syncService.dataModel
 
         println("==============================================")
-        println("[DEBUG] MyMainCppRunConfigurationProducer 正在检查同步数据...")
+        println("[DEBUG] HarmonyRunConfigurationProducer 正在检查同步数据...")
         
         if (model != null) {
             println("[DEBUG] ✅ 同步成功！")

@@ -34,7 +34,7 @@
 ### 初始化阶段
 ```
 === LLDBDebugProcess 初始化 ===
-可执行文件路径: /path/to/mymaincpp
+可执行文件路径: /path/to/Harmony
 Session: ProjectName
 Session 类: ...
 当前已注册的断点类型数量: X

@@ -4,7 +4,7 @@ import com.intellij.execution.RunManager
 import com.intellij.execution.RunManagerListener
 import com.intellij.execution.RunnerAndConfigurationSettings
 import com.intellij.openapi.project.Project
-import org.jetbrains.plugins.template.cpp.MyMainCppRunConfiguration
+import org.jetbrains.plugins.template.runconfig.HarmonyRunConfiguration
 
 /**
  * 监听运行配置变化
@@ -37,9 +37,9 @@ class RunConfigurationListener(private val project: Project) : RunManagerListene
         
         val configuration = settings.configuration
         
-        // 当选择 MyMainCppRunConfiguration 时
-        if (configuration is MyMainCppRunConfiguration) {
-            println("MyMainCpp configuration selected")
+        // 当选择 HarmonyRunConfiguration 时
+        if (configuration is HarmonyRunConfiguration) {
+            println("Harmony configuration selected")
             
             // 检查是否有选中的设备
             val deviceService = DeviceService.getInstance(project)
@@ -55,7 +55,7 @@ class RunConfigurationListener(private val project: Project) : RunManagerListene
                 deviceService.setSelectedDevice(devices.first())
             }
         } else {
-            println("Non-MyMainCpp configuration selected: ${configuration.javaClass.simpleName}")
+            println("Non-Harmony configuration selected: ${configuration.javaClass.simpleName}")
         }
         
         println("=== RunConfigurationListener.runConfigurationSelected() END ===")

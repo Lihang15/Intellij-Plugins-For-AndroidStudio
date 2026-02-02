@@ -72,10 +72,10 @@
         <!-- 注释掉 HarmonyOS Execution Target Provider - 不再使用 ExecutionTarget 系统 -->
         <!-- <executionTargetProvider implementation="org.jetbrains.plugins.template.device.HarmonyExecutionTargetProvider"/> -->
         
-          <!-- MyMainCpp 运行配置 -->
-        <configurationType implementation="org.jetbrains.plugins.template.cpp.MyMainCppConfigurationType"/>
-        <runConfigurationProducer implementation="org.jetbrains.plugins.template.cpp.MyMainCppRunConfigurationProducer"/>
-        <programRunner implementation="org.jetbrains.plugins.template.cpp.MyMainCppDebugRunner"/>
+          <!-- Harmony 运行配置 -->
+        <configurationType implementation="org.jetbrains.plugins.template.runconfig.HarmonyConfigurationType"/>
+        <runConfigurationProducer implementation="org.jetbrains.plugins.template.runconfig.HarmonyRunConfigurationProducer"/>
+        <programRunner implementation="org.jetbrains.plugins.template.runconfig.HarmonyDebugRunner"/>
         
         <!-- LLDB 断点类型 -->
         <xdebugger.breakpointType implementation="org.jetbrains.plugins.template.debuger.LLDBLineBreakpointType"/>

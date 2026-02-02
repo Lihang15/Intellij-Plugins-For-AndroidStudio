@@ -83,7 +83,7 @@ killall -9 "Android Studio"
 [setBreakpoint] LLDB 命令: breakpoint set --file "/Users/admin/AndroidStudioProjects/faksbda/my_main.cpp" --line 10
 [setBreakpoint] 响应:
 --- 开始 ---
-Breakpoint 1: where = mymaincpp`main + 24 at my_main.cpp:10, address = 0x...
+Breakpoint 1: where = Harmony`main + 24 at my_main.cpp:10, address = 0x...
 --- 结束 ---
 [setBreakpoint] 结果: 成功
 ========== [LLDBServiceWrapper.setBreakpoint] 结束 ==========
@@ -97,7 +97,7 @@ Breakpoint 1: where = mymaincpp`main + 24 at my_main.cpp:10, address = 0x...
 [getStackTrace] 响应内容:
 --- 开始 ---
 * thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
-  * frame #0: 0x... mymaincpp`main at my_main.cpp:10
+  * frame #0: 0x... Harmony`main at my_main.cpp:10
     frame #1: 0x... dyld`start + ...
 --- 结束 ---
 [getStackTrace] 解析出 2 个栈帧

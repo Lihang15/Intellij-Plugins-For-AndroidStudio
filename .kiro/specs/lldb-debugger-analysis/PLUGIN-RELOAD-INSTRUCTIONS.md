@@ -73,7 +73,7 @@
 
 ```
 === LLDBDebugProcess 初始化 ===
-可执行文件路径: /Users/admin/AndroidStudioProjects/faksbda/mymaincpp
+可执行文件路径: /Users/admin/AndroidStudioProjects/faksbda/Harmony
 Session: faksbda
 Session 类: ...
 当前已注册的断点类型数量: X
@@ -85,7 +85,7 @@ Session 类: ...
 
 ### 方法 1：实时查看日志
 ```bash
-tail -f ~/Library/Logs/Google/AndroidStudio*/idea.log | grep -E "LLDB|Breakpoint|MyMainCpp"
+tail -f ~/Library/Logs/Google/AndroidStudio*/idea.log | grep -E "LLDB|Breakpoint|Harmony"
 ```
 
 ### 方法 2：查看完整日志

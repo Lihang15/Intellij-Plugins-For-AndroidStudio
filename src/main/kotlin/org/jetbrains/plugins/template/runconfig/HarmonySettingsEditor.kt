@@ -1,4 +1,4 @@
-package org.jetbrains.plugins.template.cpp
+package org.jetbrains.plugins.template.runconfig
 
 import com.intellij.openapi.options.SettingsEditor
 import com.intellij.openapi.project.Project
@@ -13,13 +13,13 @@ import javax.swing.JPanel
 /**
  * 运行配置编辑器 UI
  */
-class MyMainCppSettingsEditor(private val project: Project) : SettingsEditor<MyMainCppRunConfiguration>() {
+class HarmonySettingsEditor(private val project: Project) : SettingsEditor<HarmonyRunConfiguration>() {
     private val deviceComboBox = ComboBox<DeviceItem>()
     private val panel: JPanel
     private val deviceService = DeviceService.getInstance(project)
 
     init {
-        println("=== MyMainCppSettingsEditor INIT ===")
+        println("=== HarmonySettingsEditor INIT ===")
         println("Project: ${project.name}")
         
         // 监听设备变化
@@ -38,7 +38,7 @@ class MyMainCppSettingsEditor(private val project: Project) : SettingsEditor<MyM
             .addComponentFillVertically(JPanel(), 0)
             .panel
         
-        println("=== MyMainCppSettingsEditor INIT COMPLETE ===")
+        println("=== HarmonySettingsEditor INIT COMPLETE ===")
     }
 
     private fun updateDeviceList() {
@@ -88,7 +88,7 @@ class MyMainCppSettingsEditor(private val project: Project) : SettingsEditor<MyM
         return panel
     }
 
-    override fun resetEditorFrom(configuration: MyMainCppRunConfiguration) {
+    override fun resetEditorFrom(configuration: HarmonyRunConfiguration) {
         println("=== resetEditorFrom() CALLED ===")
         // 从配置中读取设备 ID
         val deviceId = configuration.getSelectedDeviceId()
@@ -111,7 +111,7 @@ class MyMainCppSettingsEditor(private val project: Project) : SettingsEditor<MyM
         println("=== resetEditorFrom() COMPLETE ===")
     }
 
-    override fun applyEditorTo(configuration: MyMainCppRunConfiguration) {
+    override fun applyEditorTo(configuration: HarmonyRunConfiguration) {
         println("=== applyEditorTo() CALLED ===")
         // 保存选中的设备 ID 到配置
         val selectedItem = deviceComboBox.selectedItem as? DeviceItem

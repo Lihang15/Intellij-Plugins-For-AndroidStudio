@@ -67,7 +67,7 @@ This design addresses critical threading violations, file conflicts, and perform
 class MyProjectActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
         // Run configuration setup (fast, can stay on current thread)
-        autoCreateMyMainAppConfiguration(project)
+        autoCreateharmonyAppConfiguration(project)
         
         // Sync on background thread
         launch(Dispatchers.IO) {

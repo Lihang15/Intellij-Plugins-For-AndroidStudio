@@ -4,8 +4,8 @@ import com.intellij.execution.RunManager
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
-import org.jetbrains.plugins.template.cpp.MyMainCppConfigurationType
-import org.jetbrains.plugins.template.cpp.MyMainCppFileCreator
+import org.jetbrains.plugins.template.runconfig.HarmonyConfigurationType
+import org.jetbrains.plugins.template.runconfig.HarmonyFileCreator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -24,11 +24,11 @@ class MyProjectActivity : ProjectActivity {
         // 延迟一下，等待 VFS 刷新和文件系统同步
         kotlinx.coroutines.delay(1000) // 延迟 1 秒
         
-        // 在项目启动时自动检查并创建 MyMainApp 运行配置
+        // 在项目启动时自动检查并创建 harmonyApp 运行配置
         try {
-            autoCreateMyMainAppConfiguration(project)
+            autoCreateharmonyAppConfiguration(project)
         } catch (e: Exception) {
-            logger.error("Failed to create MyMainApp configuration", e)
+            logger.error("Failed to create harmonyApp configuration", e)
         }
 
         // 开始工程同步 - 使用 launch 确保不阻塞项目打开
@@ -47,25 +47,25 @@ class MyProjectActivity : ProjectActivity {
     }
 
     /**
-     * 如果项目根目录存在 my_main.cpp，则自动在 Run/Debug Configurations 中添加一个 MyMainApp 配置
+     * 如果项目根目录存在 my_main.cpp，则自动在 Run/Debug Configurations 中添加一个 harmonyApp 配置
      * 优化了重复检查逻辑，提前返回以提高性能
      * 添加了重试机制以处理文件系统延迟
      */
-    private suspend fun autoCreateMyMainAppConfiguration(project: Project) {
+    private suspend fun autoCreateharmonyAppConfiguration(project: Project) {
         try {
             val basePath = project.basePath
             if (basePath == null) {
-                logger.warn("Project basePath is null, cannot create MyMainApp configuration")
+                logger.warn("Project basePath is null, cannot create harmonyApp configuration")
                 return
             }
             
             // 重试机制：尝试 3 次，每次间隔 500ms
-            var myMainCppFile: File? = null
+            var HarmonyFile: File? = null
             for (attempt in 1..3) {
-                myMainCppFile = File(basePath, "my_main.cpp")
-                logger.info("Attempt $attempt: Checking for my_main.cpp at: ${myMainCppFile.absolutePath}")
+                HarmonyFile = File(basePath, "my_main.cpp")
+                logger.info("Attempt $attempt: Checking for my_main.cpp at: ${HarmonyFile.absolutePath}")
                 
-                if (myMainCppFile.exists()) {
+                if (HarmonyFile.exists()) {
                     logger.info("my_main.cpp found on attempt $attempt")
                     break
                 }
@@ -84,44 +84,44 @@ class MyProjectActivity : ProjectActivity {
             }
             
             // 最终检查
-            if (myMainCppFile == null || !myMainCppFile.exists()) {
-                logger.warn("my_main.cpp not found after 3 attempts, skipping MyMainApp configuration creation")
+            if (HarmonyFile == null || !HarmonyFile.exists()) {
+                logger.warn("my_main.cpp not found after 3 attempts, skipping harmonyApp configuration creation")
                 return
             }
             
-            logger.info("my_main.cpp confirmed, attempting to create MyMainApp configuration")
+            logger.info("my_main.cpp confirmed, attempting to create harmonyApp configuration")
 
             val runManager = RunManager.getInstance(project)
             
             // 检查配置是否已存在
             val existingConfig = runManager.allSettings.find { settings ->
-                settings.type is MyMainCppConfigurationType && settings.name == "MyMainApp"
+                settings.type is HarmonyConfigurationType && settings.name == "harmonyApp"
             }
             
             if (existingConfig != null) {
-                logger.info("MyMainApp configuration already exists")
+                logger.info("harmonyApp configuration already exists")
                 return
             }
 
             // 创建新配置
-            val configurationType = MyMainCppConfigurationType.getInstance()
+            val configurationType = HarmonyConfigurationType.getInstance()
             val factory = configurationType.configurationFactories.firstOrNull()
             
             if (factory == null) {
-                logger.error("MyMainCppConfigurationType factory not found")
+                logger.error("HarmonyConfigurationType factory not found")
                 return
             }
 
-            val settings = runManager.createConfiguration("MyMainApp", factory)
+            val settings = runManager.createConfiguration("harmonyApp", factory)
             runManager.addConfiguration(settings)
             
             // 可选：设置为选中的配置
             runManager.selectedConfiguration = settings
             
-            logger.info("✅ MyMainApp configuration created and added successfully")
+            logger.info("✅ harmonyApp configuration created and added successfully")
             logger.info("Total configurations: ${runManager.allSettings.size}")
         } catch (e: Exception) {
-            logger.error("Failed to create MyMainApp configuration", e)
+            logger.error("Failed to create harmonyApp configuration", e)
         }
     }
 
