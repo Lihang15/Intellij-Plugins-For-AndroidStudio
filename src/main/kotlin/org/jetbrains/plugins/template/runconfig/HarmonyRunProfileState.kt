@@ -35,75 +35,51 @@ class HarmonyRunProfileState(
         
         println("目标设备: ${selectedDevice.displayName} (${selectedDevice.deviceId})")
 
-        // 获取文件路径
-        val cppFilePath = configuration.getHarmonyPath()
-            ?: throw ExecutionException("找不到 my_main.cpp 文件")
+        // 获取项目根目录
+        val projectBasePath = project.basePath
+            ?: throw ExecutionException("无法获取项目根目录")
         
-        val outputPath = configuration.getOutputPath()
-            ?: throw ExecutionException("无法确定输出路径")
-
-        // 第一步：编译
-        println("开始编译 my_main.cpp...")
-        println("编译命令: clang++ -g -O0 $cppFilePath -o $outputPath")
+        // 从插件资源中获取脚本路径
+        val scriptResource = this::class.java.getResource("/runscript/runOhosApp-Mac.sh")
+            ?: throw ExecutionException("无法在插件资源中找到 runOhosApp-Mac.sh 脚本")
         
-        val compileResult = compile(project, cppFilePath, outputPath)
-        if (!compileResult.success) {
-            throw ExecutionException("编译失败\n${compileResult.errorMessage}")
+        // 将脚本复制到系统临时目录（用户看不到）
+        val tempDir = System.getProperty("java.io.tmpdir")
+        val scriptPath = File(tempDir, "runOhosApp-Mac-${System.currentTimeMillis()}.sh")
+        try {
+            scriptResource.openStream().use { input ->
+                scriptPath.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            // 设置执行权限
+            scriptPath.setExecutable(true)
+            // 设置为 JVM 退出时自动删除
+            scriptPath.deleteOnExit()
+            println("✓ 脚本已准备: ${scriptPath.name} (临时文件)")
+        } catch (e: Exception) {
+            throw ExecutionException("无法准备脚本文件: ${e.message}")
         }
         
-        println("编译成功！")
         println("-".repeat(50))
-        println("开始运行程序...")
+        println("执行 OHOS 部署脚本...")
+        println("工作目录: $projectBasePath")
+        println("平台: ohosArm64")
         println("设备: ${selectedDevice.deviceId}")
         println("-".repeat(50))
 
-        // 第二步：运行（这里可以添加 HDC 命令来在设备上运行）
-        val commandLine = GeneralCommandLine(outputPath)
-        commandLine.setWorkDirectory(project.basePath)
-        
-        // TODO: 如果需要在设备上运行，可以使用 HDC 命令
-        // 例如: hdc -t ${selectedDevice.deviceId} file send $outputPath /data/local/tmp/
-        //      hdc -t ${selectedDevice.deviceId} shell /data/local/tmp/my_main
+        // 构建命令：bash <临时脚本路径> ohosArm64 <设备ID>
+        // 关键：工作目录设置为项目根目录，而不是临时目录
+        val commandLine = GeneralCommandLine(
+            "bash",
+            scriptPath.absolutePath,
+            "ohosArm64",
+            selectedDevice.deviceId
+        )
+        commandLine.setWorkDirectory(projectBasePath)  // 工作目录 = 项目根目录
 
         val processHandler = KillableColoredProcessHandler(commandLine)
         ProcessTerminatedListener.attach(processHandler)
         return processHandler
-    }
-
-    /**
-     * 编译结果
-     */
-    private data class CompileResult(
-        val success: Boolean,
-        val errorMessage: String = ""
-    )
-
-    /**
-     * 编译 C++ 文件
-     */
-    private fun compile(project: Project, cppFilePath: String, outputPath: String): CompileResult {
-        val compileCommand = GeneralCommandLine(
-            "clang++",
-            "-g",
-            "-O0",
-            cppFilePath,
-            "-o",
-            outputPath
-        )
-        compileCommand.setWorkDirectory(project.basePath)
-
-        try {
-            val process = compileCommand.createProcess()
-            val exitCode = process.waitFor()
-            
-            if (exitCode != 0) {
-                val errorOutput = process.errorStream.bufferedReader().readText()
-                return CompileResult(false, errorOutput)
-            }
-            
-            return CompileResult(true)
-        } catch (e: Exception) {
-            return CompileResult(false, "编译异常: ${e.message}")
-        }
     }
 }
