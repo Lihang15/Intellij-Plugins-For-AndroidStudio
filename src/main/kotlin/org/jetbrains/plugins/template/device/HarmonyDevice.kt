@@ -1,6 +1,7 @@
 package org.jetbrains.plugins.template.device
 
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.util.IconLoader
 import javax.swing.Icon
 
 /**
@@ -20,9 +21,15 @@ data class HarmonyDevice(
      */
     fun getIcon(): Icon {
         return if (isEmulator) {
-            AllIcons.Nodes.Module  // 模块图标用于模拟器
+            // AllIcons.Nodes.Controller  // 模拟器图标
+            IconLoader.getIcon("/icons/device_emulator_green.svg", HarmonyDevice::class.java)
         } else {
-            AllIcons.Debugger.ThreadRunning  // 调试图标用于真机
+            // 真机图标：可以使用自定义图标
+            // 方式1：使用内置图标
+            // AllIcons.Nodes.Controller
+            
+            // 方式2：使用自定义图标（取消下面注释即可）
+             IconLoader.getIcon("/icons/device_physical_blue.svg", HarmonyDevice::class.java)
         }
     }
     

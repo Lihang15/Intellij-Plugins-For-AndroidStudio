@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit
 class SimpleDevicePoller(
     private val hdcExecutor: HdcCommandExecutor,
     private val onDevicesChanged: (List<HarmonyDevice>) -> Unit,
-    private val pollingIntervalSeconds: Long = 10L
+    private val pollingIntervalSeconds: Long = 10L  //10 秒轮询一次
 ) {
     private val logger = Logger.getInstance(SimpleDevicePoller::class.java)
     

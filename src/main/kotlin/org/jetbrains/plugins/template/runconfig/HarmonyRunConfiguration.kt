@@ -61,12 +61,42 @@ class HarmonyRunConfiguration(
     }
 
     /**
-     * 检查项目中是否存在 my_main.cpp 文件
+     * 检查项目中是否存在 HarmonyOS 项目结构
+     * 
+     * 规则：
+     * 1. 项目根目录下存在 harmonyApp 目录，或
+     * 2. local.properties 中配置了有效的 local.ohos.path
      */
     fun hasHarmonyFile(): Boolean {
         val projectPath = project.basePath ?: return false
-        val HarmonyFile = File(projectPath, "my_main.cpp")
-        return HarmonyFile.exists()
+        
+        // 规则 1：检查项目根目录下是否存在 harmonyApp 目录
+        val harmonyAppDir = File(projectPath, "harmonyApp")
+        if (harmonyAppDir.exists() && harmonyAppDir.isDirectory) {
+            return true
+        }
+
+        // 规则 2：检查 local.properties 中的 local.ohos.path
+        val localPropertiesFile = File(projectPath, "local.properties")
+        if (localPropertiesFile.exists()) {
+            try {
+                val properties = java.util.Properties()
+                localPropertiesFile.inputStream().use { properties.load(it) }
+                
+                val ohosPath = properties.getProperty("local.ohos.path")?.trim()
+                if (!ohosPath.isNullOrEmpty()) {
+                    // 检查配置的路径是否真实存在
+                    val ohosDir = File(ohosPath)
+                    if (ohosDir.exists() && ohosDir.isDirectory) {
+                        return true
+                    }
+                }
+            } catch (e: Exception) {
+                // 读取失败，返回 false
+            }
+        }
+
+        return false
     }
 
     /**

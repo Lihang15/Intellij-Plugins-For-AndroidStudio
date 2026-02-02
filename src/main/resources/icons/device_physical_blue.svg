@@ -1,0 +1,18 @@
+<svg width="16" height="16" viewBox="0 0 16 16"
+     xmlns="http://www.w3.org/2000/svg">
+    <!-- 外框 -->
+    <rect x="4" y="1.5" width="8" height="13"
+          rx="1.5" ry="1.5"
+          fill="none"
+          stroke="#2979FF"
+          stroke-width="1.2"/>
+
+    <!-- 屏幕 -->
+    <rect x="6" y="3" width="4" height="8"
+          fill="#2979FF"
+          opacity="0.25"/>
+
+    <!-- Home 点 -->
+    <circle cx="8" cy="12.5" r="0.7"
+            fill="#2979FF"/>
+</svg>

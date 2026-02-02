@@ -113,9 +113,35 @@ echo -e "\033[33m🚀 正在拉起应用并启动调试监听...\033[0m"
 SYSTEM_VERSION=$($HDC_BIN -t $TARGET_ID shell param get const.ohos.apiversion 2>/dev/null || echo "unknown")
 echo "检测到系统版本: $SYSTEM_VERSION"
 
+# 检查屏幕锁定状态并提示
+echo ""
+echo -e "\033[33m⚠️  重要提示：\033[0m"
+echo -e "  如果设备屏幕处于锁定状态，请手动解锁屏幕"
+echo -e "  开发者模式下系统无法自动解锁屏幕（安全限制）"
+echo ""
+
 # 第一步：启动应用（不使用 -D 调试模式，兼容 5.1）
 echo "  -> 执行 aa start (启动应用)..."
-$HDC_BIN -t $TARGET_ID shell aa start -a $ABILITY_NAME -b $BUNDLE_NAME
+AA_START_OUTPUT=$($HDC_BIN -t $TARGET_ID shell aa start -a $ABILITY_NAME -b $BUNDLE_NAME 2>&1)
+AA_START_RESULT=$?
+
+# 检查是否是屏幕锁定错误
+if echo "$AA_START_OUTPUT" | grep -q "10106102\|screen is locked"; then
+    echo -e "\033[31m❌ 错误: 设备屏幕被锁定！\033[0m"
+    echo ""
+    echo -e "\033[33m请按照以下步骤操作：\033[0m"
+    echo "  1️⃣  手动解锁设备屏幕"
+    echo "  2️⃣  保持屏幕常亮（开发期间建议设置：设置 -> 显示与亮度 -> 休眠 -> 永不）"
+    echo "  3️⃣  重新运行此脚本"
+    echo ""
+    echo -e "\033[36m提示: 开发者模式下无法自动解锁屏幕，这是系统安全限制\033[0m"
+    exit 1
+fi
+
+# 如果启动失败但不是屏幕锁定错误，仍然继续尝试
+if [ $AA_START_RESULT -ne 0 ]; then
+    echo -e "\033[33m⚠️  应用启动命令返回非零退出码，但继续尝试...\033[0m"
+fi
 
 # 等待应用启动
 sleep 2
@@ -142,6 +168,16 @@ done
 
 if [ -z "$APP_PID" ]; then
     echo -e "\n\033[31m❌ 失败: 应用未能在预期内启动！\033[0m"
+    echo ""
+    echo -e "\033[33m可能的原因：\033[0m"
+    echo "  • 设备屏幕被锁定（最常见）"
+    echo "  • 应用安装失败"
+    echo "  • 设备性能问题导致启动超时"
+    echo ""
+    echo -e "\033[36m建议操作：\033[0m"
+    echo "  1. 确保设备屏幕已解锁"
+    echo "  2. 检查设备是否正常连接: hdc list targets"
+    echo "  3. 手动启动应用确认是否能正常运行"
     exit 1
 fi
 
