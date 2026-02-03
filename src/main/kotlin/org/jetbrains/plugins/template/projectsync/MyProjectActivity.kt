@@ -1,15 +1,18 @@
 package org.jetbrains.plugins.template.projectsync
 
 import com.intellij.execution.RunManager
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.thisLogger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.openapi.vfs.newvfs.BulkFileListener
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import org.jetbrains.plugins.template.runconfig.HarmonyConfigurationType
-import org.jetbrains.plugins.template.runconfig.HarmonyFileCreator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.io.File
 import org.jetbrains.plugins.template.projectsync.localproperties.LocalPropertiesListener
 
 
@@ -17,18 +20,25 @@ class MyProjectActivity : ProjectActivity {
 
     private val logger = thisLogger()
     private val syncExecutor: SyncExecutor = DefaultSyncExecutor()
+    private val vfsChecker: VfsReadinessChecker = DefaultVfsReadinessChecker()
 
     override suspend fun execute(project: Project) {
-        logger.info("MyProjectActivity starting for project: ${project.name}")
+        logger.info("[HarmonyOS] MyProjectActivity starting for project: ${project.name}")
         
-        // 延迟一下，等待 VFS 刷新和文件系统同步
-        kotlinx.coroutines.delay(1000) // 延迟 1 秒
+        // Wait for VFS to be ready before checking project structure
+        val vfsReady = waitForVfsReady(project)
         
-        // 在项目启动时自动检查并创建 harmonyApp 运行配置
-        try {
-            autoCreateharmonyAppConfiguration(project)
-        } catch (e: Exception) {
-            logger.error("Failed to create harmonyApp configuration", e)
+        if (vfsReady) {
+            // VFS is ready, proceed with configuration creation
+            try {
+                autoCreateharmonyAppConfiguration(project)
+            } catch (e: Exception) {
+                logger.error("[HarmonyOS] Failed to create harmonyApp configuration", e)
+            }
+        } else {
+            // VFS not ready within timeout, register listener as fallback
+            logger.warn("[HarmonyOS] VFS not ready within timeout, registering fallback listener")
+            registerVfsFallbackListener(project)
         }
 
         // 开始工程同步 - 使用 launch 确保不阻塞项目打开
@@ -43,7 +53,84 @@ class MyProjectActivity : ProjectActivity {
             }
         }
         
-        logger.info("MyProjectActivity completed for project: ${project.name}")
+        logger.info("[HarmonyOS] MyProjectActivity completed for project: ${project.name}")
+    }
+
+    /**
+     * Waits for VFS to contain HarmonyOS project markers.
+     * Returns true if VFS is ready, false if timeout.
+     */
+    private suspend fun waitForVfsReady(project: Project): Boolean {
+        val basePath = project.basePath
+        if (basePath == null) {
+            logger.warn("[HarmonyOS] Project basePath is null")
+            return false
+        }
+        
+        logger.info("[HarmonyOS] Waiting for VFS to be ready...")
+        
+        // Check for either harmonyApp directory or local.properties
+        val pathsToCheck = listOf(
+            "harmonyApp",
+            "local.properties"
+        )
+        
+        val ready = vfsChecker.waitForPaths(
+            project = project,
+            paths = pathsToCheck,
+            timeoutMs = 5000,
+            pollIntervalMs = 100
+        )
+        
+        if (ready) {
+            logger.info("[HarmonyOS] VFS is ready, found project markers")
+        } else {
+            logger.warn("[HarmonyOS] VFS not ready within timeout")
+        }
+        
+        return ready
+    }
+
+    /**
+     * Registers a VFS listener as fallback for delayed file appearance.
+     */
+    private fun registerVfsFallbackListener(project: Project) {
+        // Create a connection that we can disconnect later
+        val connection = project.messageBus.connect()
+        
+        val listener = object : BulkFileListener {
+            override fun after(events: List<VFileEvent>) {
+                // Check if any event involves harmonyApp directory or local.properties
+                val relevantEvent = events.any { event ->
+                    val path = event.path
+                    path.contains("harmonyApp") || path.endsWith("local.properties")
+                }
+                
+                if (relevantEvent) {
+                    logger.info("[HarmonyOS] VFS event detected, attempting configuration creation")
+                    
+                    // Unregister this listener to prevent multiple attempts
+                    connection.disconnect()
+                    logger.info("[HarmonyOS] VFS fallback listener unregistered")
+                    
+                    // Attempt configuration creation
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            autoCreateharmonyAppConfiguration(project)
+                        } catch (e: Exception) {
+                            logger.error("[HarmonyOS] Fallback configuration creation failed", e)
+                        }
+                    }
+                }
+            }
+        }
+        
+        connection.subscribe(
+            VirtualFileManager.VFS_CHANGES,
+            listener
+        )
+        
+        logger.info("[HarmonyOS] VFS fallback listener registered")
     }
 
     /**
@@ -61,71 +148,29 @@ class MyProjectActivity : ProjectActivity {
                 return
             }
             
+            // Check ConfigurationCreationGuard before proceeding
+            if (!ConfigurationCreationGuard.tryAcquire(basePath)) {
+                logger.info("[HarmonyOS] Configuration creation already attempted for this project, skipping")
+                return
+            }
+            
             logger.info("[HarmonyOS] 开始检查是否需要创建 harmonyApp 运行配置...")
             logger.info("[HarmonyOS] 项目路径: $basePath")
             
-            // 检查项目是否为 HarmonyOS 项目
-            if (!isHarmonyOSProject(basePath)) {
+            // 检查项目是否为 HarmonyOS 项目 (使用 VFS API)
+            if (!isHarmonyOSProjectVfs(project)) {
                 logger.info("[HarmonyOS] 不是 HarmonyOS 项目，跳过创建 harmonyApp 配置")
                 return
             }
             
             logger.info("[HarmonyOS] ✅ 检测到 HarmonyOS 项目，准备创建运行配置")
             
-            // 在 EDT 线程中操作 RunManager
-            com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
+            // Use invokeAndWait for synchronous execution to ensure completion
+            ApplicationManager.getApplication().invokeAndWait {
                 try {
-                    val runManager = RunManager.getInstance(project)
-                    logger.info("[HarmonyOS] RunManager 获取成功")
-                    
-                    // 检查配置是否已存在
-                    val existingConfig = runManager.allSettings.find { settings ->
-                        val isHarmonyType = settings.type is HarmonyConfigurationType
-                        val isHarmonyName = settings.name == "harmonyApp"
-                        logger.info("[HarmonyOS] 检查配置: ${settings.name}, type=${settings.type::class.simpleName}, isHarmony=$isHarmonyType, isName=$isHarmonyName")
-                        isHarmonyType && isHarmonyName
-                    }
-                    
-                    if (existingConfig != null) {
-                        logger.info("[HarmonyOS] harmonyApp 配置已存在，跳过创建")
-                        return@invokeLater
-                    }
-                    
-                    logger.info("[HarmonyOS] harmonyApp 配置不存在，开始创建...")
-
-                    // 创建新配置
-                    val configurationType = HarmonyConfigurationType.getInstance()
-                    logger.info("[HarmonyOS] HarmonyConfigurationType 获取成功: $configurationType")
-                    
-                    val factory = configurationType.configurationFactories.firstOrNull()
-                    
-                    if (factory == null) {
-                        logger.error("[HarmonyOS] ❌ HarmonyConfigurationType factory not found")
-                        logger.error("[HarmonyOS] Available factories: ${configurationType.configurationFactories.size}")
-                        return@invokeLater
-                    }
-                    
-                    logger.info("[HarmonyOS] Factory 获取成功: $factory")
-
-                    val settings = runManager.createConfiguration("harmonyApp", factory)
-                    logger.info("[HarmonyOS] Configuration 创建成功: ${settings.name}")
-                    
-                    runManager.addConfiguration(settings)
-                    logger.info("[HarmonyOS] Configuration 已添加到 RunManager")
-                    
-                    // 设置为选中的配置
-                    if (runManager.selectedConfiguration == null) {
-                        runManager.selectedConfiguration = settings
-                        logger.info("[HarmonyOS] 设置为选中配置")
-                    }
-                    
-                    logger.info("[HarmonyOS] ✅ harmonyApp 运行配置创建成功")
-                    logger.info("[HarmonyOS] 当前配置总数: ${runManager.allSettings.size}")
-                    runManager.allSettings.forEach { 
-                        logger.info("[HarmonyOS]   - ${it.name} (${it.type::class.simpleName})")
-                    }
+                    createConfigurationOnEdt(project)
                 } catch (e: Exception) {
-                    logger.error("[HarmonyOS] ❌ 在 EDT 中创建配置失败", e)
+                    logger.error("[HarmonyOS] ❌ Failed to create configuration on EDT", e)
                 }
             }
             
@@ -133,45 +178,97 @@ class MyProjectActivity : ProjectActivity {
             logger.error("[HarmonyOS] ❌ Failed to create harmonyApp configuration", e)
         }
     }
+
+    /**
+     * Creates the run configuration on EDT thread.
+     * Must be called from EDT.
+     */
+    private fun createConfigurationOnEdt(project: Project) {
+        ApplicationManager.getApplication().assertIsDispatchThread()
+        
+        val runManager = RunManager.getInstance(project)
+        logger.info("[HarmonyOS] RunManager obtained")
+        
+        // Check if configuration already exists (idempotent)
+        val existingConfig = runManager.allSettings.find { settings ->
+            settings.type is HarmonyConfigurationType && settings.name == "harmonyApp"
+        }
+        
+        if (existingConfig != null) {
+            logger.info("[HarmonyOS] Configuration already exists, skipping")
+            return
+        }
+        
+        logger.info("[HarmonyOS] Creating new configuration...")
+        
+        // Create configuration
+        val configurationType = HarmonyConfigurationType.getInstance()
+        val factory = configurationType.configurationFactories.firstOrNull()
+        
+        if (factory == null) {
+            logger.error("[HarmonyOS] ❌ Configuration factory not found")
+            return
+        }
+        
+        val settings = runManager.createConfiguration("harmonyApp", factory)
+        runManager.addConfiguration(settings)
+        
+        // Set as selected if no other configuration is selected
+        if (runManager.selectedConfiguration == null) {
+            runManager.selectedConfiguration = settings
+            logger.info("[HarmonyOS] Set as selected configuration")
+        }
+        
+        logger.info("[HarmonyOS] ✅ Configuration created successfully")
+        logger.info("[HarmonyOS] Total configurations: ${runManager.allSettings.size}")
+    }
     
     /**
-     * 检查是否为 HarmonyOS 项目
+     * 检查是否为 HarmonyOS 项目 (使用 VFS API)
      * 
      * 规则：
      * 1. 项目根目录下存在 harmonyApp 目录，或
      * 2. local.properties 中配置了有效的 local.ohos.path
      */
-    private fun isHarmonyOSProject(basePath: String): Boolean {
-        // 规则 1：检查 harmonyApp 目录
-        val harmonyAppDir = File(basePath, "harmonyApp")
-        if (harmonyAppDir.exists() && harmonyAppDir.isDirectory) {
-            logger.info("✅ 找到 harmonyApp 目录: ${harmonyAppDir.absolutePath}")
-            return true
-        }
-        
-        // 规则 2：检查 local.properties 中的 local.ohos.path
-        val localPropertiesFile = File(basePath, "local.properties")
-        if (localPropertiesFile.exists()) {
-            try {
-                val properties = java.util.Properties()
-                localPropertiesFile.inputStream().use { properties.load(it) }
-                
-                val ohosPath = properties.getProperty("local.ohos.path")?.trim()
-                if (!ohosPath.isNullOrEmpty()) {
-                    val ohosDir = File(ohosPath)
-                    if (ohosDir.exists() && ohosDir.isDirectory) {
-                        logger.info("✅ 找到有效的 local.ohos.path: $ohosPath")
-                        return true
-                    } else {
-                        logger.warn("local.ohos.path 配置的路径不存在: $ohosPath")
-                    }
-                }
-            } catch (e: Exception) {
-                logger.error("读取 local.properties 失败", e)
+    private fun isHarmonyOSProjectVfs(project: Project): Boolean {
+        return ApplicationManager.getApplication().runReadAction<Boolean> {
+            val basePath = project.basePath ?: return@runReadAction false
+            val baseDir = LocalFileSystem.getInstance().findFileByPath(basePath)
+                ?: return@runReadAction false
+            
+            // Rule 1: Check for harmonyApp directory
+            val harmonyAppDir = baseDir.findChild("harmonyApp")
+            if (harmonyAppDir != null && harmonyAppDir.isDirectory) {
+                logger.info("[HarmonyOS] ✅ Found harmonyApp directory in VFS")
+                return@runReadAction true
             }
+            
+            // Rule 2: Check local.properties for local.ohos.path
+            val localPropsFile = baseDir.findChild("local.properties")
+            if (localPropsFile != null && !localPropsFile.isDirectory) {
+                try {
+                    val content = String(localPropsFile.contentsToByteArray())
+                    val properties = java.util.Properties()
+                    properties.load(content.byteInputStream())
+                    
+                    val ohosPath = properties.getProperty("local.ohos.path")?.trim()
+                    if (!ohosPath.isNullOrEmpty()) {
+                        val ohosDir = LocalFileSystem.getInstance().findFileByPath(ohosPath)
+                        if (ohosDir != null && ohosDir.isDirectory) {
+                            logger.info("[HarmonyOS] ✅ Found valid local.ohos.path in VFS")
+                            return@runReadAction true
+                        } else {
+                            logger.warn("[HarmonyOS] local.ohos.path configured but path not found: $ohosPath")
+                        }
+                    }
+                } catch (e: Exception) {
+                    logger.error("[HarmonyOS] Error reading local.properties", e)
+                }
+            }
+            
+            logger.info("[HarmonyOS] No HarmonyOS project markers found in VFS")
+            false
         }
-        
-        return false
     }
 
     /**
