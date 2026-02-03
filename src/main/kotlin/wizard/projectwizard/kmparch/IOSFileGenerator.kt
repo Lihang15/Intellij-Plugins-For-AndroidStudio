@@ -15,6 +15,10 @@ class IOSFileGenerator(params: KMPConfigModel) : FileGenerator(params) {
                 ftManager.getCodeTemplate(Template.COMPOSE_IOS_MAIN)
             ),
              GeneratorTemplateFile(
+                "composeApp/src/iosMain/kotlin/$packageName/Platform.ios.kt",
+                ftManager.getCodeTemplate(Template.PLATFORM_IOS)
+            ),
+             GeneratorTemplateFile(
                 "iosApp/iosApp.xcodeproj/project.xcworkspace/contents.xcworkspacedata",
                 ftManager.getCodeTemplate(Template.CONTENTS_XCWORK)
             ),

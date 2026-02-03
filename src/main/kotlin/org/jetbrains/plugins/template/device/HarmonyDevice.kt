@@ -48,11 +48,11 @@ data class HarmonyDevice(
             val displayName = when {
                 isEmulator && trimmedId.startsWith("127.0.0.1:") -> {
                     val port = trimmedId.substringAfter(":")
-                    "Harmony-E-$port"
+                    "harmony-E-$port"
                 }
                 isEmulator && trimmedId.startsWith("localhost:") -> {
                     val port = trimmedId.substringAfter(":")
-                    "Harmony-E-$port"
+                    "harmony-E-$port"
                 }
                 else -> trimmedId // Physical device, use ID as name
             }

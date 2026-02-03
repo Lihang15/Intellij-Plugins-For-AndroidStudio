@@ -71,7 +71,6 @@ object Template {
     const val IOS_PREVIEW_CONTENTS_JSON = "preview_contents.json"
     const val IOS_INFO_PLIST = "info.plist"
     const val CONTENTS_XCWORK= "contents.xcworkspacedata"
-    const val MY_MAIN_CPP = "my_main.cpp"
 
     const val GRADLE_PROPERTIES = "gradle.properties"
     const val SETTINGS_GRADLE = "settings.gradle.kts"

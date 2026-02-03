@@ -3,17 +3,17 @@ package org.jetbrains.plugins.template.runconfig
 import com.intellij.execution.configurations.ConfigurationFactory
 import com.intellij.execution.configurations.ConfigurationType
 import com.intellij.execution.configurations.ConfigurationTypeBase
-import com.intellij.icons.AllIcons
+import com.intellij.openapi.util.IconLoader
 import javax.swing.Icon
 
 /**
- * C++ 运行配置类型
+ * harmonyApp运行配置类型
  */
 class HarmonyConfigurationType : ConfigurationTypeBase(
     "HarmonyConfigurationType",
     "harmonyApp",
-    "Run my_main.cpp application",
-    AllIcons.RunConfigurations.Application
+    "Run HarmonyOS application",
+    IconLoader.getIcon("/icons/harmony_logo.svg", HarmonyConfigurationType::class.java)
 ) {
 
     init {

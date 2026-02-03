@@ -21,13 +21,8 @@
                 description="Start lldb-_ and send initialize">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
         </action>
-        <action
-                id="javaAction"
-                class="com.eazytec.plugins.TestAction"
-                text="test Java Action"
-                description="Start lldb-_ and send initialize">
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-        </action>
+        
+ 
     </actions>
     
     <!-- HarmonyOS Device Selector in Toolbar (自定义设备选择器) -->
@@ -55,8 +50,6 @@
      <!-- Project Startup -->
         <postStartupActivity implementation="org.jetbrains.plugins.template.projectsync.MyProjectActivity" />
         
-        <!-- Tim LSP Startup Activity (ProjectActivity API) -->
-        <postStartupActivity implementation="lsp.tim.TimStartupActivity" />
         
          <!-- 注册项目级数据服务,项目打开后，sync一些数据，供插件代码全局使用 -->
             <projectService 
@@ -80,6 +73,10 @@
         <!-- LLDB 断点类型 -->
         <xdebugger.breakpointType implementation="org.jetbrains.plugins.template.debuger.LLDBLineBreakpointType"/>
         
+        <!-- Notification Groups -->
+        <notificationGroup id="QuickProjectWizard" displayType="BALLOON" isLogByDefault="true"/>
+        <notificationGroup id="HarmonyOS Device" displayType="BALLOON" isLogByDefault="true"/>
+        
     </extensions>
 
 
@@ -97,118 +94,6 @@
 
 
 
-
-    <!-- LSP4IntelliJ Extensions for Tim Language -->
-    <extensions defaultExtensionNs="com.intellij">
-        <!-- Tim Language and File Type Registration -->
-        <fileType
-                name="Tim File"
-                language="Tim"
-                implementationClass="lsp.tim.TimFileType"
-                extensions="tim"/>
-        <language
-                id="Tim"
-                implementationClass="lsp.tim.TimLanguage"/>
-
-        <!-- Tim Parser Definition - Required for PSI and ExternalAnnotator -->
-        <lang.parserDefinition
-                language="Tim"
-                implementationClass="lsp.tim.psi.TimParserDefinition"/>
-
-        <!-- Tim Syntax Highlighter - For basic syntax highlighting -->
-        <lang.syntaxHighlighterFactory
-                language="Tim"
-                implementationClass="lsp.tim.TimSyntaxHighlighterFactory"/>
-
-          <!-- Tim Diagnostic Monitor - For debugging LSP diagnostics -->
-        <externalAnnotator id="TimDiagnosticMonitor"
-                           language="Tim"
-                           implementationClass="lsp.tim.TimDiagnosticMonitor"
-                           order="last"/>
-
-        <!-- LSP4IntelliJ Core Services -->
-        <applicationService serviceImplementation="org.wso2.lsp4intellij.IntellijLanguageClient"/>
-
-        <!-- LSP Editor and File Sync Listeners -->
-        <editorFactoryListener implementation="org.wso2.lsp4intellij.listeners.LSPEditorListener"/>
-        <fileDocumentManagerListener implementation="org.wso2.lsp4intellij.listeners.LSPFileDocumentManagerListener"/>
-
-        <!-- LSP Notification Groups -->
-        <notificationGroup id="lsp" displayType="STICKY_BALLOON"/>
-        <notificationGroup id="LSPProgressNotification" displayType="NONE" />
-        
-        <!-- HarmonyOS Device Notification Group -->
-        <notificationGroup id="HarmonyOS Device" displayType="BALLOON"/>
-        
-        <!-- Project Wizard Notification Group -->
-        <notificationGroup id="QuickProjectWizard" displayType="BALLOON"/>
-
-        <!-- LSP Status Bar Widget -->
-        <statusBarWidgetFactory implementation="org.wso2.lsp4intellij.statusbar.LSPServerStatusWidgetFactory"
-                                id="org.wso2.lsp4intellij.statusbar.LSPServerStatusWidgetFactory"
-                                order="first" />
-
-        <!-- LSP Code Completion -->
-        <completion.contributor implementationClass="org.wso2.lsp4intellij.contributors.LSPCompletionContributor"
-                                id="org.wso2.lsp4intellij.contributors.LSPCompletionContributor" 
-                                language="Tim"/>
-        <typedHandler implementation="org.wso2.lsp4intellij.listeners.LSPTypedHandler"
-                      id="LSPTypedHandler"/>
-
-        <!-- LSP Code Diagnostics (Annotations) -->
-        <externalAnnotator id="LSPAnnotator" 
-                           language="Tim"
-                           implementationClass="org.wso2.lsp4intellij.contributors.annotator.LSPAnnotator"/>
-
-      
-
-        <!-- LSP Workspace Symbols -->
-        <gotoSymbolContributor implementation="org.wso2.lsp4intellij.contributors.symbol.LSPSymbolContributor"
-                               id="LSPSymbolContributor"/>
-
-        <!-- LSP Rename Support -->
-        <renameHandler implementation="org.wso2.lsp4intellij.contributors.rename.LSPRenameHandler" 
-                       id="LSPRenameHandler" 
-                       order="first"/>
-        <renamePsiElementProcessor implementation="org.wso2.lsp4intellij.contributors.rename.LSPRenameProcessor" 
-                                   id="LSPRenameProcessor" 
-                                   order="first"/>
-
-        <!-- LSP Folding Support -->
-        <lang.foldingBuilder language="Tim" 
-                             implementationClass="org.wso2.lsp4intellij.contributors.LSPFoldingRangeProvider" 
-                             id="LSPFoldingRangeProvider" 
-                             order="first" />
-
-        <!-- LSP Go to Definition Support -->
-        <gotoDeclarationHandler implementation="org.wso2.lsp4intellij.contributors.goto.LSPGotoDeclarationHandler"
-                                id="LSPGotoDeclarationHandler"
-                                order="first"/>
-    </extensions>
-
-    <!-- LSP Actions -->
-    <actions>
-        <!-- LSP Hover/Quick Doc -->
-        <action id="org.intellij.sdk.action.QuickDocAction" 
-                class="org.wso2.lsp4intellij.actions.LSPQuickDocAction">
-        </action>
-
-        <!-- LSP Find References -->
-        <action class="org.wso2.lsp4intellij.actions.LSPReferencesAction" 
-                id="LSPFindUsages">
-            <keyboard-shortcut first-keystroke="shift alt F7" keymap="$default"/>
-        </action>
-    </actions>
-
-    <!-- LSP Application Listeners -->
-    <applicationListeners>
-        <!-- VFS Sync for LSP -->
-        <listener class="org.wso2.lsp4intellij.listeners.VFSListener"
-                  topic="com.intellij.openapi.vfs.VirtualFileListener"/>
-        <!-- Project Manager Listener for LSP -->
-        <listener class="org.wso2.lsp4intellij.listeners.LSPProjectManagerListener"
-                  topic="com.intellij.openapi.project.ProjectManagerListener"/>
-    </applicationListeners>
     
     <!-- Project Listeners -->
     <projectListeners>

@@ -47,82 +47,131 @@ class MyProjectActivity : ProjectActivity {
     }
 
     /**
-     * 如果项目根目录存在 my_main.cpp，则自动在 Run/Debug Configurations 中添加一个 harmonyApp 配置
-     * 优化了重复检查逻辑，提前返回以提高性能
-     * 添加了重试机制以处理文件系统延迟
+     * 自动创建 harmonyApp 运行配置
+     * 
+     * 触发条件：
+     * 1. 项目根目录下存在 harmonyApp 目录，或
+     * 2. local.properties 中配置了有效的 local.ohos.path
      */
     private suspend fun autoCreateharmonyAppConfiguration(project: Project) {
         try {
             val basePath = project.basePath
             if (basePath == null) {
-                logger.warn("Project basePath is null, cannot create harmonyApp configuration")
+                logger.warn("[HarmonyOS] Project basePath is null, cannot create harmonyApp configuration")
                 return
             }
             
-            // 重试机制：尝试 3 次，每次间隔 500ms
-            var HarmonyFile: File? = null
-            for (attempt in 1..3) {
-                HarmonyFile = File(basePath, "my_main.cpp")
-                logger.info("Attempt $attempt: Checking for my_main.cpp at: ${HarmonyFile.absolutePath}")
-                
-                if (HarmonyFile.exists()) {
-                    logger.info("my_main.cpp found on attempt $attempt")
-                    break
-                }
-                
-                if (attempt < 3) {
-                    logger.info("my_main.cpp not found, waiting 500ms before retry...")
-                    kotlinx.coroutines.delay(500)
+            logger.info("[HarmonyOS] 开始检查是否需要创建 harmonyApp 运行配置...")
+            logger.info("[HarmonyOS] 项目路径: $basePath")
+            
+            // 检查项目是否为 HarmonyOS 项目
+            if (!isHarmonyOSProject(basePath)) {
+                logger.info("[HarmonyOS] 不是 HarmonyOS 项目，跳过创建 harmonyApp 配置")
+                return
+            }
+            
+            logger.info("[HarmonyOS] ✅ 检测到 HarmonyOS 项目，准备创建运行配置")
+            
+            // 在 EDT 线程中操作 RunManager
+            com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater {
+                try {
+                    val runManager = RunManager.getInstance(project)
+                    logger.info("[HarmonyOS] RunManager 获取成功")
                     
-                    // 刷新 VFS
-                    com.intellij.openapi.application.ApplicationManager.getApplication().invokeAndWait {
-                        val vfsFile = com.intellij.openapi.vfs.LocalFileSystem.getInstance()
-                            .refreshAndFindFileByPath(basePath)
-                        vfsFile?.refresh(false, true)
+                    // 检查配置是否已存在
+                    val existingConfig = runManager.allSettings.find { settings ->
+                        val isHarmonyType = settings.type is HarmonyConfigurationType
+                        val isHarmonyName = settings.name == "harmonyApp"
+                        logger.info("[HarmonyOS] 检查配置: ${settings.name}, type=${settings.type::class.simpleName}, isHarmony=$isHarmonyType, isName=$isHarmonyName")
+                        isHarmonyType && isHarmonyName
+                    }
+                    
+                    if (existingConfig != null) {
+                        logger.info("[HarmonyOS] harmonyApp 配置已存在，跳过创建")
+                        return@invokeLater
+                    }
+                    
+                    logger.info("[HarmonyOS] harmonyApp 配置不存在，开始创建...")
+
+                    // 创建新配置
+                    val configurationType = HarmonyConfigurationType.getInstance()
+                    logger.info("[HarmonyOS] HarmonyConfigurationType 获取成功: $configurationType")
+                    
+                    val factory = configurationType.configurationFactories.firstOrNull()
+                    
+                    if (factory == null) {
+                        logger.error("[HarmonyOS] ❌ HarmonyConfigurationType factory not found")
+                        logger.error("[HarmonyOS] Available factories: ${configurationType.configurationFactories.size}")
+                        return@invokeLater
+                    }
+                    
+                    logger.info("[HarmonyOS] Factory 获取成功: $factory")
+
+                    val settings = runManager.createConfiguration("harmonyApp", factory)
+                    logger.info("[HarmonyOS] Configuration 创建成功: ${settings.name}")
+                    
+                    runManager.addConfiguration(settings)
+                    logger.info("[HarmonyOS] Configuration 已添加到 RunManager")
+                    
+                    // 设置为选中的配置
+                    if (runManager.selectedConfiguration == null) {
+                        runManager.selectedConfiguration = settings
+                        logger.info("[HarmonyOS] 设置为选中配置")
+                    }
+                    
+                    logger.info("[HarmonyOS] ✅ harmonyApp 运行配置创建成功")
+                    logger.info("[HarmonyOS] 当前配置总数: ${runManager.allSettings.size}")
+                    runManager.allSettings.forEach { 
+                        logger.info("[HarmonyOS]   - ${it.name} (${it.type::class.simpleName})")
+                    }
+                } catch (e: Exception) {
+                    logger.error("[HarmonyOS] ❌ 在 EDT 中创建配置失败", e)
+                }
+            }
+            
+        } catch (e: Exception) {
+            logger.error("[HarmonyOS] ❌ Failed to create harmonyApp configuration", e)
+        }
+    }
+    
+    /**
+     * 检查是否为 HarmonyOS 项目
+     * 
+     * 规则：
+     * 1. 项目根目录下存在 harmonyApp 目录，或
+     * 2. local.properties 中配置了有效的 local.ohos.path
+     */
+    private fun isHarmonyOSProject(basePath: String): Boolean {
+        // 规则 1：检查 harmonyApp 目录
+        val harmonyAppDir = File(basePath, "harmonyApp")
+        if (harmonyAppDir.exists() && harmonyAppDir.isDirectory) {
+            logger.info("✅ 找到 harmonyApp 目录: ${harmonyAppDir.absolutePath}")
+            return true
+        }
+        
+        // 规则 2：检查 local.properties 中的 local.ohos.path
+        val localPropertiesFile = File(basePath, "local.properties")
+        if (localPropertiesFile.exists()) {
+            try {
+                val properties = java.util.Properties()
+                localPropertiesFile.inputStream().use { properties.load(it) }
+                
+                val ohosPath = properties.getProperty("local.ohos.path")?.trim()
+                if (!ohosPath.isNullOrEmpty()) {
+                    val ohosDir = File(ohosPath)
+                    if (ohosDir.exists() && ohosDir.isDirectory) {
+                        logger.info("✅ 找到有效的 local.ohos.path: $ohosPath")
+                        return true
+                    } else {
+                        logger.warn("local.ohos.path 配置的路径不存在: $ohosPath")
                     }
                 }
+            } catch (e: Exception) {
+                logger.error("读取 local.properties 失败", e)
             }
-            
-            // 最终检查
-            if (HarmonyFile == null || !HarmonyFile.exists()) {
-                logger.warn("my_main.cpp not found after 3 attempts, skipping harmonyApp configuration creation")
-                return
-            }
-            
-            logger.info("my_main.cpp confirmed, attempting to create harmonyApp configuration")
-
-            val runManager = RunManager.getInstance(project)
-            
-            // 检查配置是否已存在
-            val existingConfig = runManager.allSettings.find { settings ->
-                settings.type is HarmonyConfigurationType && settings.name == "harmonyApp"
-            }
-            
-            if (existingConfig != null) {
-                logger.info("harmonyApp configuration already exists")
-                return
-            }
-
-            // 创建新配置
-            val configurationType = HarmonyConfigurationType.getInstance()
-            val factory = configurationType.configurationFactories.firstOrNull()
-            
-            if (factory == null) {
-                logger.error("HarmonyConfigurationType factory not found")
-                return
-            }
-
-            val settings = runManager.createConfiguration("harmonyApp", factory)
-            runManager.addConfiguration(settings)
-            
-            // 可选：设置为选中的配置
-            runManager.selectedConfiguration = settings
-            
-            logger.info("✅ harmonyApp configuration created and added successfully")
-            logger.info("Total configurations: ${runManager.allSettings.size}")
-        } catch (e: Exception) {
-            logger.error("Failed to create harmonyApp configuration", e)
         }
+        
+        return false
     }
 
     /**
