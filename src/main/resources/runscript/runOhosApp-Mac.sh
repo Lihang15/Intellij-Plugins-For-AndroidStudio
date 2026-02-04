@@ -6,6 +6,7 @@ DEFAULT_PLATFORM="ohosArm64"
 DEFAULT_TARGET_ID="127.0.0.1:5555"
 DEFAULT_BUNDLE_NAME="com.example.harmonyapp"
 DEFAULT_ABILITY_NAME="EntryAbility"
+LOCAL_OHOS_PATH=""
 
 usage() {
     echo "用法: $0 [选项] [PLATFORM] [TARGET_ID]"
@@ -17,11 +18,13 @@ usage() {
     echo "选项:"
     echo "  -b BUNDLE     设置包名 (当前: $DEFAULT_BUNDLE_NAME)"
     echo "  -a ABILITY    设置 Ability 名 (当前: $DEFAULT_ABILITY_NAME)"
+    echo "  -p PATH       设置外部 OHOS 项目路径 (localOhosPath)"
     echo "  -h            显示此帮助信息"
     echo ""
     echo "示例:"
     echo "  $0 ohosArm64 127.0.0.1:5555"
     echo "  $0 -b com.test.app -a MainAbility"
+    echo "  $0 -p /path/to/external/ohos/project"
     exit 0
 }
 
@@ -30,10 +33,11 @@ BUNDLE_NAME=$DEFAULT_BUNDLE_NAME
 ABILITY_NAME=$DEFAULT_ABILITY_NAME
 
 # 解析选项
-while getopts "b:a:h" opt; do
+while getopts "b:a:p:h" opt; do
     case $opt in
         b) BUNDLE_NAME=$OPTARG ;;
         a) ABILITY_NAME=$OPTARG ;;
+        p) LOCAL_OHOS_PATH=$OPTARG ;;
         h) usage ;;
         ?) usage ;;
     esac
@@ -51,6 +55,9 @@ echo "  - 平台: $PLATFORM"
 echo "  - 设备: $TARGET_ID"
 echo "  - 包名: $BUNDLE_NAME"
 echo "  - Ability: $ABILITY_NAME"
+if [ -n "$LOCAL_OHOS_PATH" ]; then
+    echo "  - 外部 OHOS 路径: $LOCAL_OHOS_PATH"
+fi
 echo "------------------------------------------------------------"
 
 # ====================== 【2. 执行 Gradle 构建】 ======================
@@ -58,7 +65,12 @@ echo "Working path: $(pwd)"
 echo "📦 正在构建 OpenHarmony ARM64 版本..."
 if [ "$PLATFORM" = "ohosArm64" ]; then
     # 在项目根目录执行 Gradle 构建
-    ./gradlew :composeApp:publishDebugBinariesToHarmonyApp
+    if [ -n "$LOCAL_OHOS_PATH" ]; then
+        echo "使用外部 OHOS 路径: $LOCAL_OHOS_PATH"
+        ./gradlew :composeApp:publishDebugBinariesToHarmonyApp -PharmonyAppPath="$LOCAL_OHOS_PATH"
+    else
+        ./gradlew :composeApp:publishDebugBinariesToHarmonyApp
+    fi
 elif [ "$PLATFORM" = "iosSimulatorArm64" ]; then
     ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64
 else
@@ -67,11 +79,18 @@ else
 fi
 
 # 切换到 harmonyApp 目录执行后续的 OHOS 命令
-if [ ! -d "harmonyApp" ]; then
-    echo -e "\033[31m❌ 错误: 找不到 harmonyApp 目录\033[0m"
+# 如果指定了外部路径，使用外部路径，否则使用默认的 harmonyApp 目录
+if [ -n "$LOCAL_OHOS_PATH" ]; then
+    HARMONY_APP_DIR="$LOCAL_OHOS_PATH"
+else
+    HARMONY_APP_DIR="harmonyApp"
+fi
+
+if [ ! -d "$HARMONY_APP_DIR" ]; then
+    echo -e "\033[31m❌ 错误: 找不到 harmonyApp 目录: $HARMONY_APP_DIR\033[0m"
     exit 4
 fi
-cd harmonyApp
+cd "$HARMONY_APP_DIR"
 echo "切换到 harmonyApp 目录: $(pwd)"
 
 # ====================== 【3. 环境路径与 SDK 配置】 ======================

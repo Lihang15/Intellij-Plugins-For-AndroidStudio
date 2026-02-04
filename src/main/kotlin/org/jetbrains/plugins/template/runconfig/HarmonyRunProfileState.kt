@@ -66,20 +66,74 @@ class HarmonyRunProfileState(
         println("工作目录: $projectBasePath")
         println("平台: ohosArm64")
         println("设备: ${selectedDevice.deviceId}")
+        
+        // 读取 local.properties 中的 local.ohos.path
+        val localOhosPath = readLocalOhosPath(project)
+        if (localOhosPath != null) {
+            println("外部 OHOS 路径: $localOhosPath")
+        }
         println("-".repeat(50))
 
-        // 构建命令：bash <临时脚本路径> ohosArm64 <设备ID>
-        // 关键：工作目录设置为项目根目录，而不是临时目录
-        val commandLine = GeneralCommandLine(
-            "bash",
-            scriptPath.absolutePath,
-            "ohosArm64",
-            selectedDevice.deviceId
-        )
+        // 构建命令：bash <临时脚本路径> [选项] ohosArm64 <设备ID>
+        // 如果有外部路径，添加 -p 参数
+        val commandLine = if (localOhosPath != null) {
+            GeneralCommandLine(
+                "bash",
+                scriptPath.absolutePath,
+                "-p",
+                localOhosPath,
+                "ohosArm64",
+                selectedDevice.deviceId
+            )
+        } else {
+            GeneralCommandLine(
+                "bash",
+                scriptPath.absolutePath,
+                "ohosArm64",
+                selectedDevice.deviceId
+            )
+        }
         commandLine.setWorkDirectory(projectBasePath)  // 工作目录 = 项目根目录
 
         val processHandler = KillableColoredProcessHandler(commandLine)
         ProcessTerminatedListener.attach(processHandler)
         return processHandler
+    }
+    
+    /**
+     * 读取 local.properties 中的 local.ohos.path
+     */
+    private fun readLocalOhosPath(project: Project): String? {
+        return try {
+            val basePath = project.basePath ?: return null
+            val localPropsFile = File(basePath, "local.properties")
+            
+            if (!localPropsFile.exists()) {
+                println("[OHOS] local.properties 文件不存在")
+                return null
+            }
+            
+            val properties = java.util.Properties()
+            localPropsFile.inputStream().use { properties.load(it) }
+            
+            val path = properties.getProperty("local.ohos.path")?.trim()
+            if (path.isNullOrEmpty()) {
+                println("[OHOS] local.ohos.path 未配置或为空")
+                return null
+            }
+            
+            // 验证路径是否存在
+            val ohosDir = File(path)
+            if (!ohosDir.exists() || !ohosDir.isDirectory) {
+                println("[OHOS] 警告: local.ohos.path 指定的路径不存在: $path")
+                return null
+            }
+            
+            println("[OHOS] 读取到 local.ohos.path: $path")
+            path
+        } catch (e: Exception) {
+            println("[OHOS] 读取 local.properties 失败: ${e.message}")
+            null
+        }
     }
 }

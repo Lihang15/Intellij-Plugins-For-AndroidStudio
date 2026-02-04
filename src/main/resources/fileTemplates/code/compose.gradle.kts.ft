@@ -205,12 +205,25 @@ configurations.all {
     exclude(group = "androidx.collection", module = "collection-jvm")
 }
 
+// Harmony App 输出目录（支持命令行 --harmonyAppPath）
+val harmonyAppDir: File = run {
+    val cliPath = project.findProperty("harmonyAppPath") as String?
+    if (cliPath.isNullOrBlank()) {
+        // 默认：项目根目录 /harmonyApp
+        rootProject.file("harmonyApp")
+    } else {
+        // 命令行传入的路径
+        file(cliPath)
+    }
+}
+
+
 // 为不同类型(debug、release)OHOS构建注册Copy任务并发布到Harmony App目录
 arrayOf("debug", "release").forEach { type ->
     tasks.register<Copy>("publish${'$'}{type.capitalizeUS()}BinariesToHarmonyApp") {
         group = "harmony" // 归类到harmony任务组
         dependsOn("link${'$'}{type.capitalizeUS()}SharedOhosArm64") // 依赖于OHOS shared lib的链接任务
-        into(rootProject.file("harmonyApp")) // 输出目标目录
+         into(harmonyAppDir) // 输出目标目录
         from("build/bin/ohosArm64/${'$'}{type}Shared/libkn_api.h") { // 复制头文件
             into("entry/src/main/cpp/include/")         // 指定目录
         }
