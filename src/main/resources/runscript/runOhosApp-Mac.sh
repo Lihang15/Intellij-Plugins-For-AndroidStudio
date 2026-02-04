@@ -74,7 +74,7 @@ if [ "$PLATFORM" = "ohosArm64" ]; then
 elif [ "$PLATFORM" = "iosSimulatorArm64" ]; then
     ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64
 else
-    echo -e "\033[31m❌ 错误: 不支持的平台 '$PLATFORM'\033[0m"
+    echo -e "\033[31m 错误: 不支持的平台 '$PLATFORM'\033[0m"
     exit 4
 fi
 
@@ -87,7 +87,7 @@ else
 fi
 
 if [ ! -d "$HARMONY_APP_DIR" ]; then
-    echo -e "\033[31m❌ 错误: 找不到 harmonyApp 目录: $HARMONY_APP_DIR\033[0m"
+    echo -e "\033[31m 错误: 找不到 harmonyApp 目录: $HARMONY_APP_DIR\033[0m"
     exit 4
 fi
 cd "$HARMONY_APP_DIR"
@@ -109,7 +109,7 @@ AVAILABLE_TARGETS=$($HDC_BIN list targets)
 HAP_FILE="./entry/build/default/outputs/default/entry-default-unsigned.hap"
 
 if ! echo "$AVAILABLE_TARGETS" | grep -q "$TARGET_ID"; then
-    echo -e "\033[31m❌ 错误: 设备 $TARGET_ID 不在线！\033[0m"
+    echo -e "\033[31m 错误: 设备 $TARGET_ID 不在线！\033[0m"
     exit 5
 fi
 
@@ -126,7 +126,7 @@ $HDC_BIN -t $TARGET_ID file send $HAP_FILE $REMOTE_HAP_DIR/
 $HDC_BIN -t $TARGET_ID shell bm install -p $REMOTE_HAP_DIR/
 
 # ====================== 【5. 核心启动与调试挂载】 ======================
-echo -e "\033[33m🚀 正在拉起应用并启动调试监听...\033[0m"
+echo -e "\033[33m 正在拉起应用并启动调试监听...\033[0m"
 
 # 获取系统版本
 SYSTEM_VERSION=$($HDC_BIN -t $TARGET_ID shell param get const.ohos.apiversion 2>/dev/null || echo "unknown")
@@ -134,7 +134,7 @@ echo "检测到系统版本: $SYSTEM_VERSION"
 
 # 检查屏幕锁定状态并提示
 echo ""
-echo -e "\033[33m⚠️  重要提示：\033[0m"
+echo -e "\033[33m⚠  重要提示：\033[0m"
 echo -e "  如果设备屏幕处于锁定状态，请手动解锁屏幕"
 echo -e "  开发者模式下系统无法自动解锁屏幕（安全限制）"
 echo ""
@@ -146,12 +146,12 @@ AA_START_RESULT=$?
 
 # 检查是否是屏幕锁定错误
 if echo "$AA_START_OUTPUT" | grep -q "10106102\|screen is locked"; then
-    echo -e "\033[31m❌ 错误: 设备屏幕被锁定！\033[0m"
+    echo -e "\033[31m 错误: 设备屏幕被锁定！\033[0m"
     echo ""
     echo -e "\033[33m请按照以下步骤操作：\033[0m"
-    echo "  1️⃣  手动解锁设备屏幕"
-    echo "  2️⃣  保持屏幕常亮（开发期间建议设置：设置 -> 显示与亮度 -> 休眠 -> 永不）"
-    echo "  3️⃣  重新运行此脚本"
+    echo "  1️  手动解锁设备屏幕"
+    echo "  2️  保持屏幕常亮（开发期间建议设置：设置 -> 显示与亮度 -> 休眠 -> 永不）"
+    echo "  3️  重新运行此脚本"
     echo ""
     echo -e "\033[36m提示: 开发者模式下无法自动解锁屏幕，这是系统安全限制\033[0m"
     exit 1
@@ -159,7 +159,7 @@ fi
 
 # 如果启动失败但不是屏幕锁定错误，仍然继续尝试
 if [ $AA_START_RESULT -ne 0 ]; then
-    echo -e "\033[33m⚠️  应用启动命令返回非零退出码，但继续尝试...\033[0m"
+    echo -e "\033[33m⚠  应用启动命令返回非零退出码，但继续尝试...\033[0m"
 fi
 
 # 等待应用启动
@@ -177,7 +177,7 @@ APP_PID=""
 while [ $COUNT -lt $MAX_WAIT ]; do
     APP_PID=$(get_pid_func)
     if [[ "$APP_PID" =~ ^[0-9]+$ ]]; then
-        echo -e "\n✅ 应用已启动 (PID: $APP_PID)"
+        echo -e "\n 应用已启动 (PID: $APP_PID)"
         break
     fi
     echo -n "."
@@ -186,7 +186,7 @@ while [ $COUNT -lt $MAX_WAIT ]; do
 done
 
 if [ -z "$APP_PID" ]; then
-    echo -e "\n\033[31m❌ 失败: 应用未能在预期内启动！\033[0m"
+    echo -e "\n\033[31m 失败: 应用未能在预期内启动！\033[0m"
     echo ""
     echo -e "\033[33m可能的原因：\033[0m"
     echo "  • 设备屏幕被锁定（最常见）"
@@ -208,7 +208,7 @@ $HDC_BIN -t $TARGET_ID shell "/data/local/tmp/debugserver/lldb-server platform -
 sleep 2
 
 echo "------------------------------------------------------------"
-echo -e "\033[32m🎉 构建、安装与应用启动已完成！\033[0m"
+echo -e "\033[32m 构建、安装与应用启动已完成！\033[0m"
 echo -e "应用信息:"
 echo -e "  - 包名: $BUNDLE_NAME"
 echo -e "  - PID: $APP_PID"

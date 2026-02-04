@@ -69,7 +69,7 @@ class HarmonyRunConfiguration(
      */
     fun hasHarmonyFile(): Boolean {
         val projectPath = project.basePath ?: run {
-            println("[HarmonyOS] ❌ project.basePath is null")
+            println("[HarmonyOS] project.basePath is null")
             return false
         }
         
@@ -82,7 +82,7 @@ class HarmonyRunConfiguration(
         println("[HarmonyOS]   - isDirectory: ${harmonyAppDir.isDirectory}")
         
         if (harmonyAppDir.exists() && harmonyAppDir.isDirectory) {
-            println("[HarmonyOS] ✅ 找到 harmonyApp 目录")
+            println("[HarmonyOS] 找到 harmonyApp 目录")
             return true
         }
 
@@ -106,33 +106,17 @@ class HarmonyRunConfiguration(
                     println("[HarmonyOS]   - ohosPath isDirectory: ${ohosDir.isDirectory}")
                     
                     if (ohosDir.exists() && ohosDir.isDirectory) {
-                        println("[HarmonyOS] ✅ 找到有效的 local.ohos.path")
+                        println("[HarmonyOS] 找到有效的 local.ohos.path")
                         return true
                     }
                 }
             } catch (e: Exception) {
-                println("[HarmonyOS] ❌ 读取 local.properties 失败: ${e.message}")
+                println("[HarmonyOS] 读取 local.properties 失败: ${e.message}")
                 e.printStackTrace()
             }
         }
 
-        println("[HarmonyOS] ❌ 未找到 HarmonyOS 项目结构")
+        println("[HarmonyOS] 未找到 HarmonyOS 项目结构")
         return false
-    }
-
-    /**
-     * 获取 my_main.cpp 文件的完整路径
-     */
-    fun getHarmonyPath(): String? {
-        val projectPath = project.basePath ?: return null
-        return File(projectPath, "my_main.cpp").absolutePath
-    }
-
-    /**
-     * 获取编译输出文件路径
-     */
-    fun getOutputPath(): String? {
-        val projectPath = project.basePath ?: return null
-        return File(projectPath, "Harmony").absolutePath
     }
 }

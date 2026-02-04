@@ -27,9 +27,9 @@ object ConfigurationCreationGuard {
         val acquired = flag.compareAndSet(false, true)
 
         if (acquired) {
-            logger.info("[ConfigGuard] ✅ Lock acquired for project: $projectPath")
+            logger.info("[ConfigGuard] Lock acquired for project: $projectPath")
         } else {
-            logger.info("[ConfigGuard] ⏭️ Lock already held for project: $projectPath, skipping")
+            logger.info("[ConfigGuard] Lock already held for project: $projectPath, skipping")
         }
 
         return acquired
@@ -42,7 +42,7 @@ object ConfigurationCreationGuard {
      */
     fun release(projectPath: String) {
         creationAttempts[projectPath]?.set(false)
-        logger.info("[ConfigGuard] 🔓 Lock released for project: $projectPath")
+        logger.info("[ConfigGuard] Lock released for project: $projectPath")
     }
 
     /**

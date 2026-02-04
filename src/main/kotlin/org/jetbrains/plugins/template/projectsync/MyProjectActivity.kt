@@ -163,19 +163,19 @@ class MyProjectActivity : ProjectActivity {
                 return
             }
             
-            logger.info("[HarmonyOS] ✅ 检测到 HarmonyOS 项目，准备创建运行配置")
+            logger.info("[HarmonyOS] 检测到 HarmonyOS 项目，准备创建运行配置")
             
             // Use invokeAndWait for synchronous execution to ensure completion
             ApplicationManager.getApplication().invokeAndWait {
                 try {
                     createConfigurationOnEdt(project)
                 } catch (e: Exception) {
-                    logger.error("[HarmonyOS] ❌ Failed to create configuration on EDT", e)
+                    logger.error("[HarmonyOS] Failed to create configuration on EDT", e)
                 }
             }
             
         } catch (e: Exception) {
-            logger.error("[HarmonyOS] ❌ Failed to create harmonyApp configuration", e)
+            logger.error("[HarmonyOS] Failed to create harmonyApp configuration", e)
         }
     }
 
@@ -206,7 +206,7 @@ class MyProjectActivity : ProjectActivity {
         val factory = configurationType.configurationFactories.firstOrNull()
         
         if (factory == null) {
-            logger.error("[HarmonyOS] ❌ Configuration factory not found")
+            logger.error("[HarmonyOS] Configuration factory not found")
             return
         }
         
@@ -219,7 +219,7 @@ class MyProjectActivity : ProjectActivity {
             logger.info("[HarmonyOS] Set as selected configuration")
         }
         
-        logger.info("[HarmonyOS] ✅ Configuration created successfully")
+        logger.info("[HarmonyOS] Configuration created successfully")
         logger.info("[HarmonyOS] Total configurations: ${runManager.allSettings.size}")
     }
     
@@ -239,7 +239,7 @@ class MyProjectActivity : ProjectActivity {
             // Rule 1: Check for harmonyApp directory
             val harmonyAppDir = baseDir.findChild("harmonyApp")
             if (harmonyAppDir != null && harmonyAppDir.isDirectory) {
-                logger.info("[HarmonyOS] ✅ Found harmonyApp directory in VFS")
+                logger.info("[HarmonyOS] Found harmonyApp directory in VFS")
                 return@runReadAction true
             }
             
@@ -255,7 +255,7 @@ class MyProjectActivity : ProjectActivity {
                     if (!ohosPath.isNullOrEmpty()) {
                         val ohosDir = LocalFileSystem.getInstance().findFileByPath(ohosPath)
                         if (ohosDir != null && ohosDir.isDirectory) {
-                            logger.info("[HarmonyOS] ✅ Found valid local.ohos.path in VFS")
+                            logger.info("[HarmonyOS] Found valid local.ohos.path in VFS")
                             return@runReadAction true
                         } else {
                             logger.warn("[HarmonyOS] local.ohos.path configured but path not found: $ohosPath")
