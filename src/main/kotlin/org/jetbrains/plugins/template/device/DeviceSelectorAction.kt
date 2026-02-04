@@ -59,10 +59,8 @@ class DeviceSelectorAction : AnAction(), CustomComponentAction, DumbAware {
     }
     
     override fun createCustomComponent(presentation: Presentation, place: String): JComponent {
-        println("========================================")
         println("=== DeviceSelectorAction.createCustomComponent() ===")
         println("Place: $place")
-        println("========================================")
         
         val iconLabel = JBLabel(DEFAULT_DEVICE_ICON)
         val textLabel = JBLabel()
@@ -153,7 +151,6 @@ class DeviceSelectorAction : AnAction(), CustomComponentAction, DumbAware {
     }
     
     override fun update(e: AnActionEvent) {
-        println("========================================")
         println("=== DeviceSelectorAction.update() ===")
         
         val project = e.project
@@ -234,7 +231,6 @@ class DeviceSelectorAction : AnAction(), CustomComponentAction, DumbAware {
         // 更新自定义组件
         updateCustomComponent(presentation, icon, text)
         
-        println("========================================")
     }
     
     private fun updateCustomComponent(presentation: Presentation, icon: Icon, text: String) {

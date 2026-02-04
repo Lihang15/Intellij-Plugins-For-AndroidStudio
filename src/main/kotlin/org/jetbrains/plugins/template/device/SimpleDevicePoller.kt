@@ -150,14 +150,12 @@ class SimpleDevicePoller(
         val duration = System.currentTimeMillis() - startTime
         println("Poll completed in ${duration}ms")
         println("=== SimpleDevicePoller.pollDevices() COMPLETE ===")
-        println("========================================")
     }
     
     private fun hasDeviceListChanged(
         previous: List<HarmonyDevice>,
         current: List<HarmonyDevice>
     ): Boolean {
-        println("========================================")
         println("=== hasDeviceListChanged() CALLED ===")
         println("previous.size=${previous.size}, current.size=${current.size}")
         
@@ -183,7 +181,6 @@ class SimpleDevicePoller(
         val changed = previousIds != currentIds
         println("IDs comparison result: $changed")
         println("=== hasDeviceListChanged() RETURNING: $changed ===")
-        println("========================================")
         
         return changed
     }

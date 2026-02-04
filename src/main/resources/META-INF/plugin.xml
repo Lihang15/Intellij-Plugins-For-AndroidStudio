@@ -7,8 +7,6 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
 
-    <resource-bundle>messages.MyBundle</resource-bundle>
-
     <depends>org.jetbrains.android</depends>
     <depends>com.intellij.modules.androidstudio</depends>
     
@@ -97,10 +95,6 @@
     
     <!-- Project Listeners -->
     <projectListeners>
-        <!-- Run Configuration Listener for HarmonyOS Device Selection -->
-        <listener class="org.jetbrains.plugins.template.device.RunConfigurationListener"
-                  topic="com.intellij.execution.RunManagerListener"/>
-        
         <!-- OHOS PostSync Listener: 监听 Gradle Sync 完成事件 -->
         <listener class="org.jetbrains.plugins.template.projectsync.localproperties.OhosPostSyncExtension"
                   topic="com.android.tools.idea.gradle.project.sync.GradleSyncListenerWithRoot"/>
