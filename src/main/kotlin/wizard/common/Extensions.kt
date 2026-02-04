@@ -6,7 +6,7 @@ import java.net.URI
 fun getImage(className: String, imagePath: String): Thumb {
     val pluginClassLoader =
         Class.forName("wizard.projectwizard.${className}Kt").classLoader
-    val imageUrl = pluginClassLoader?.getResource("images/$imagePath.png")
+    val imageUrl = pluginClassLoader?.getResource("icons/$imagePath.png")
     return if (imageUrl != null) {
         Thumb { imageUrl }
     } else {
