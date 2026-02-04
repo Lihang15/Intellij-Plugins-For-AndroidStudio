@@ -12,11 +12,9 @@ import com.intellij.openapi.application.ApplicationManager
 class GlobalRunConfigurationListener : RunManagerListener {
     
     override fun runConfigurationSelected(settings: RunnerAndConfigurationSettings?) {
-        println("========================================")
         println("=== GlobalRunConfigurationListener.runConfigurationSelected() ===")
         println("=== Configuration: ${settings?.name} ===")
         println("=== Type: ${settings?.configuration?.javaClass?.simpleName} ===")
-        println("========================================")
         
         // 强制触发所有 Action 的 update() 方法
         ApplicationManager.getApplication().invokeLater {

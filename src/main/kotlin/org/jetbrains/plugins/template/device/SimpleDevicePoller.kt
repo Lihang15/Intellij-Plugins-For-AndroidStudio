@@ -27,10 +27,8 @@ class SimpleDevicePoller(
     private var isFirstPoll = true  // 标记是否是第一次轮询
     
     fun start() {
-        println("========================================")
         println("=== SimpleDevicePoller.start() CALLED (NEW VERSION) ===")
         println("Thread: ${Thread.currentThread().name}")
-        println("========================================")
         
         if (running) {
             println("!!! Already running, returning")
@@ -81,7 +79,6 @@ class SimpleDevicePoller(
         }
         
         println("=== SimpleDevicePoller.start() COMPLETE ===")
-        println("========================================")
     }
     
     fun stop() {
@@ -93,7 +90,6 @@ class SimpleDevicePoller(
     
     private fun pollDevices() {
         val startTime = System.currentTimeMillis()
-        println("========================================")
         println("=== SimpleDevicePoller.pollDevices() CALLED (NEW VERSION) ===")
         println("Time: ${java.util.Date()}")
         println("Thread: ${Thread.currentThread().name}")

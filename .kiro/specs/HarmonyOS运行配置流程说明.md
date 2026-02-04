@@ -390,7 +390,7 @@ private fun hasHarmonyOSProject(projectPath: String): Boolean {
 │  - listeners: List<DeviceListener>      │
 └────────────┬────────────────────────────┘
              │
-             ├─► FlutterStyleDeviceSelectorAction (工具栏设备选择器)
+             ├─► DeviceSelectorAction (工具栏设备选择器)
              │
              ├─► HarmonySettingsEditor (配置编辑器)
              │
@@ -402,7 +402,7 @@ private fun hasHarmonyOSProject(projectPath: String): Boolean {
 用户在工具栏选择设备
     │
     ▼
-FlutterStyleDeviceSelectorAction.actionPerformed()
+DeviceSelectorAction.actionPerformed()
     │
     ▼
 DeviceService.setSelectedDevice(device)
@@ -538,7 +538,7 @@ DeviceService.getInstance(project).getSelectedDevice()
 ```
 1. 用户在工具栏选择设备
    ↓
-2. FlutterStyleDeviceSelectorAction.actionPerformed()
+2. DeviceSelectorAction.actionPerformed()
    ↓
 3. DeviceService.setSelectedDevice(device)
    ↓
@@ -602,7 +602,7 @@ HarmonyDevice (设备数据模型)
     ▼
 使用设备的组件
     │
-    ├─► FlutterStyleDeviceSelectorAction (工具栏)
+    ├─► DeviceSelectorAction (工具栏)
     ├─► HarmonySettingsEditor (配置编辑器)
     └─► HarmonyRunProfileState (运行时)
 ```

@@ -30,7 +30,7 @@
         <!-- HarmonyOS Device Selector Group - 新 UI (2022.3+) -->
         <group id="HarmonyOS.MainToolbarActions">
             <action id="HarmonyOS.DeviceSelector"
-                    class="org.jetbrains.plugins.template.device.FlutterStyleDeviceSelectorAction"
+                    class="org.jetbrains.plugins.template.device.DeviceSelectorAction"
                     description="HarmonyOS Device Selection"
                     text="HarmonyOS Device"/>
             <add-to-group anchor="before" group-id="RunToolbarMainActionGroup" relative-to-action="RedesignedRunConfigurationSelector"/>
@@ -39,7 +39,7 @@
         <!-- HarmonyOS Device Selector Group - 旧 UI (兼容性) -->
         <group id="HarmonyOS.MainToolbarActionsLegacy">
             <action id="HarmonyOS.DeviceSelectorLegacy"
-                    class="org.jetbrains.plugins.template.device.FlutterStyleDeviceSelectorAction"
+                    class="org.jetbrains.plugins.template.device.DeviceSelectorAction"
                     description="HarmonyOS Device Selection"
                     text="HarmonyOS Device"/>
             <add-to-group anchor="before" group-id="ToolbarRunGroup" relative-to-action="RunConfiguration"/>

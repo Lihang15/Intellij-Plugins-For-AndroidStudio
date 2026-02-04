@@ -26,12 +26,12 @@ import java.util.*
 import javax.swing.*
 
 /**
- * 基于 Flutter DeviceSelectorAction 的实现
- * 完全模仿 Flutter 的设备选择器
+ *  DeviceSelectorAction 的实现
+ * 
  */
-class FlutterStyleDeviceSelectorAction : AnAction(), CustomComponentAction, DumbAware {
+class DeviceSelectorAction : AnAction(), CustomComponentAction, DumbAware {
     
-    private val logger = Logger.getInstance(FlutterStyleDeviceSelectorAction::class.java)
+    private val logger = Logger.getInstance(DeviceSelectorAction::class.java)
     private val knownProjects = Collections.synchronizedList(mutableListOf<Project>())
     
     companion object {
@@ -52,7 +52,7 @@ class FlutterStyleDeviceSelectorAction : AnAction(), CustomComponentAction, Dumb
     }
     
     override fun actionPerformed(e: AnActionEvent) {
-        println("=== FlutterStyleDeviceSelectorAction.actionPerformed() ===")
+        println("=== DeviceSelectorAction.actionPerformed() ===")
         val project = e.project ?: return
         
         showDevicePopup(e.dataContext, e.getData(PlatformCoreDataKeys.CONTEXT_COMPONENT))
@@ -60,7 +60,7 @@ class FlutterStyleDeviceSelectorAction : AnAction(), CustomComponentAction, Dumb
     
     override fun createCustomComponent(presentation: Presentation, place: String): JComponent {
         println("========================================")
-        println("=== FlutterStyleDeviceSelectorAction.createCustomComponent() ===")
+        println("=== DeviceSelectorAction.createCustomComponent() ===")
         println("Place: $place")
         println("========================================")
         
@@ -154,7 +154,7 @@ class FlutterStyleDeviceSelectorAction : AnAction(), CustomComponentAction, Dumb
     
     override fun update(e: AnActionEvent) {
         println("========================================")
-        println("=== FlutterStyleDeviceSelectorAction.update() ===")
+        println("=== DeviceSelectorAction.update() ===")
         
         val project = e.project
         if (project == null) {

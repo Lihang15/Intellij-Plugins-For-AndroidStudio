@@ -50,7 +50,7 @@ class DefaultVfsReadinessChecker : VfsReadinessChecker {
             // If all paths found, return success
             if (missingPaths.isEmpty()) {
                 val elapsedMs = System.currentTimeMillis() - startTime
-                logger.info("[VfsReadiness] ✅ All paths found in VFS after ${elapsedMs}ms")
+                logger.info("[VfsReadiness] All paths found in VFS after ${elapsedMs}ms")
                 return VfsReadinessResult(
                     ready = true,
                     foundPaths = foundPaths.toList(),
